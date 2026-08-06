@@ -25,6 +25,7 @@ import {
   Square,
   ListChecks,
   X,
+  Check,
 } from 'lucide-react';
 import { Course, Lesson, Flashcard } from '../types';
 import { speakChinese } from '../utils/speech';
@@ -412,17 +413,21 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                 >
                   {/* Checkbox Overlay in Selection Mode */}
                   {isSelectMode && (
-                    <div className="absolute top-3 left-3 z-10 flex items-center justify-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          toggleSelectCard(card.id);
-                        }}
-                        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelectCard(card.id);
+                      }}
+                      className={`absolute top-3 left-3 z-20 w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white shadow-xs scale-105 ring-2 ring-indigo-300'
+                          : 'bg-white border-2 border-slate-300 text-transparent hover:border-indigo-500 hover:bg-slate-50'
+                      }`}
+                      title={isSelected ? 'Bỏ chọn thẻ này' : 'Chọn thẻ này'}
+                    >
+                      <Check className="w-4 h-4 stroke-[3]" />
+                    </button>
                   )}
 
                   <div className="space-y-3">
