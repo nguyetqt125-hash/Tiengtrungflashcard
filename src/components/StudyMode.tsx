@@ -644,7 +644,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         <div className="text-center p-6 space-y-2 my-auto">
           <p className="text-amber-400 font-bold text-xs sm:text-sm">⚠️ Chưa chọn thông tin hiển thị cho mặt này</p>
           <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-            Vui lòng bấm nút <strong>Cài Đặt (⚙️)</strong> ở trên để tick chọn các thông tin bạn muốn xem ở mặt này.
+            Vui lòng bấm nút <strong>Cài Đặt</strong> ở trên để chọn thông tin bạn muốn xem ở mặt này.
           </p>
         </div>
       );
@@ -1383,26 +1383,27 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
       ========================================== */}
       {isLearnSettingsOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-xl w-full p-6 space-y-6 shadow-2xl text-slate-100 my-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 font-black text-white text-base">
-                <Brain className="w-5 h-5 text-emerald-400" />
-                <span>Cài Đặt Ôn Tập Thông Minh</span>
+              <div>
+                <h3 className="text-base font-bold text-white">Cài Đặt Ôn Tập</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Tùy chỉnh nội dung câu hỏi và đáp án</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsLearnSettingsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-5 text-xs">
-              {/* CHẾ ĐỘ HỌC THÔNG MINH QUIZLET */}
-              <div className="space-y-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="space-y-4 text-xs">
+              <div className="space-y-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
                 {/* HÌNH THỨC TRẢ LỜI */}
-                <div className="space-y-2">
-                  <span className="text-slate-300 font-bold block text-xs">Hình thức trả lời:</span>
+                <div className="space-y-1.5">
+                  <span className="text-slate-200 font-semibold block text-xs">Hình thức trả lời:</span>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -1410,10 +1411,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                         setAnswerInputMode('multiple_choice');
                         saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, 'multiple_choice', autoSpeak, isSrsEnabled);
                       }}
-                      className={`p-2.5 rounded-xl text-center border font-bold text-xs cursor-pointer ${
+                      className={`p-2.5 rounded-xl text-center border font-semibold text-xs cursor-pointer transition-colors ${
                         answerInputMode === 'multiple_choice'
-                          ? 'bg-emerald-600 text-white border-emerald-400'
-                          : 'bg-slate-900 text-slate-400 border-slate-800'
+                          ? 'bg-emerald-600/20 text-emerald-200 border-emerald-500 font-bold'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
                       }`}
                     >
                       Trắc nghiệm
@@ -1425,10 +1426,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                         setAnswerInputMode('type_input');
                         saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, 'type_input', autoSpeak, isSrsEnabled);
                       }}
-                      className={`p-2.5 rounded-xl text-center border font-bold text-xs cursor-pointer ${
+                      className={`p-2.5 rounded-xl text-center border font-semibold text-xs cursor-pointer transition-colors ${
                         answerInputMode === 'type_input'
-                          ? 'bg-emerald-600 text-white border-emerald-400'
-                          : 'bg-slate-900 text-slate-400 border-slate-800'
+                          ? 'bg-emerald-600/20 text-emerald-200 border-emerald-500 font-bold'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
                       }`}
                     >
                       Tự gõ từ
@@ -1437,10 +1438,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 </div>
 
                 {/* CHỌN LOẠI CÂU HỎI */}
-                <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                <div className="space-y-2 pt-3 border-t border-slate-800">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-300 font-bold block text-xs">Loại câu hỏi là gì:</span>
-                    <label className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 cursor-pointer font-semibold">
+                    <span className="text-slate-200 font-semibold block text-xs">Nội dung đề bài:</span>
+                    <label className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={Object.values(questionFields).every(Boolean)}
@@ -1452,7 +1453,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={questionFields.term}
@@ -1462,7 +1463,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       <span>Chữ Hán</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={questionFields.definition}
@@ -1472,7 +1473,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       <span>Tiếng Việt</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={questionFields.pinyin}
@@ -1482,7 +1483,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       <span>Pinyin</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={questionFields.audio}
@@ -1495,10 +1496,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 </div>
 
                 {/* CHỌN CÂU TRẢ LỜI */}
-                <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                <div className="space-y-2 pt-3 border-t border-slate-800">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-300 font-bold block text-xs">Câu trả lời là gì:</span>
-                    <label className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 cursor-pointer font-semibold">
+                    <span className="text-slate-200 font-semibold block text-xs">Nội dung câu trả lời:</span>
+                    <label className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={Object.values(answerFields).every(Boolean)}
@@ -1510,7 +1511,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={answerFields.term}
@@ -1520,7 +1521,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       <span>Chữ Hán</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={answerFields.definition}
@@ -1530,7 +1531,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       <span>Tiếng Việt</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer hover:border-slate-700">
+                    <label className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-slate-800 cursor-pointer hover:border-slate-700">
                       <input
                         type="checkbox"
                         checked={answerFields.pinyin}
@@ -1544,10 +1545,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
               </div>
 
               {/* TÙY CHỌN PHÁT ÂM */}
-              <div className="flex items-center justify-between bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                 <div>
-                  <span className="font-bold text-white block">Tự động đọc phát âm tiếng Trung</span>
-                  <span className="text-[11px] text-slate-400">Tự động đọc giọng khi hiển thị từ mới</span>
+                  <span className="font-semibold text-slate-200 block">Tự động đọc phát âm tiếng Trung</span>
+                  <span className="text-[11px] text-slate-400">Đọc phát âm khi xuất hiện từ mới</span>
                 </div>
                 <input
                   type="checkbox"
@@ -1556,16 +1557,16 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                     setAutoSpeak(e.target.checked);
                     saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled);
                   }}
-                  className="w-5 h-5 rounded text-emerald-600 cursor-pointer"
+                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
               </div>
             </div>
 
             <button
               onClick={() => setIsLearnSettingsOpen(false)}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
             >
-              Áp Dụng & Tiếp Tục Ôn Tập
+              Lưu & Áp Dụng
             </button>
           </div>
         </div>
@@ -1576,27 +1577,28 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
       ========================================== */}
       {isFlashcardSettingsOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl text-slate-100 my-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl text-slate-100 my-8">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2 font-black text-white text-base">
-                <Layers className="w-5 h-5 text-indigo-400" />
-                <span>Cài Đặt Lật Thẻ Flashcard & Lặp Lại Ngắt Quãng</span>
+              <div>
+                <h3 className="text-base font-bold text-white">Cài Đặt Thẻ Flashcard</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Cấu hình lật thẻ và chu kỳ lặp lại ngắt quãng (SRS)</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsFlashcardSettingsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+                aria-label="Đóng"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-5 text-xs">
+            <div className="space-y-4 text-xs">
               {/* CHỨC NĂNG HỌC LẶP LẠI NGẮT QUÃNG (SPACED REPETITION) */}
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-extrabold text-amber-300 uppercase tracking-wider block text-[11px] flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-amber-400" />
-                    Chức Năng Học Lặp Lại Ngắt Quãng (Spaced Repetition / Leitner):
+                  <span className="font-semibold text-slate-200 text-xs">
+                    Lặp lại ngắt quãng (Spaced Repetition / Leitner)
                   </span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -1608,82 +1610,80 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       }}
                       className="w-4 h-4 rounded text-indigo-600 cursor-pointer"
                     />
-                    <span className="font-bold text-indigo-300">Bật SRS</span>
+                    <span className="font-semibold text-indigo-300">Kích hoạt SRS</span>
                   </label>
                 </div>
 
                 <div className="space-y-2 text-[11px] text-slate-300 leading-relaxed">
-                  <p>
-                    Hệ thống Lặp lại ngắt quãng (Leitner Box System) tự động chia thẻ làm 3 mức độ ôn tập theo chu kỳ thời gian tối ưu bộ nhớ:
+                  <p className="text-slate-400">
+                    Hệ thống tự động phân loại thẻ theo 3 mức độ nhớ để tối ưu chu kỳ ôn tập:
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-semibold">
-                    <div className="bg-rose-950/60 border border-rose-800/60 p-2.5 rounded-xl text-rose-200">
-                      <span className="font-bold block text-rose-300">🔴 Hộp 1: Chưa nhớ</span>
-                      <span>Lặp lại ôn tập sau 1 ngày</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-medium">
+                    <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-slate-300">
+                      <span className="font-semibold block text-rose-400">Chưa nhớ (Hộp 1)</span>
+                      <span className="text-slate-400 text-[10px]">Ôn lại sau 1 ngày</span>
                     </div>
-                    <div className="bg-amber-950/60 border border-amber-800/60 p-2.5 rounded-xl text-amber-200">
-                      <span className="font-bold block text-amber-300">🟡 Hộp 2: Tạm nhớ</span>
-                      <span>Lặp lại ôn tập sau 3 ngày</span>
+                    <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-slate-300">
+                      <span className="font-semibold block text-amber-400">Tạm nhớ (Hộp 2)</span>
+                      <span className="text-slate-400 text-[10px]">Ôn lại sau 3 ngày</span>
                     </div>
-                    <div className="bg-emerald-950/60 border border-emerald-800/60 p-2.5 rounded-xl text-emerald-200">
-                      <span className="font-bold block text-emerald-300">🟢 Hộp 3: Thành thạo</span>
-                      <span>Lặp lại ôn tập sau 7 ngày</span>
+                    <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-slate-300">
+                      <span className="font-semibold block text-emerald-400">Thành thạo (Hộp 3)</span>
+                      <span className="text-slate-400 text-[10px]">Ôn lại sau 7 ngày</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-2 flex justify-end">
+                <div className="pt-1 flex justify-end">
                   <button
                     type="button"
                     onClick={handleResetMastery}
-                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl font-bold text-[11px] flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-lg font-medium text-[11px] cursor-pointer transition-colors"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Đặt lại tất cả thẻ về Hộp 1</span>
+                    Đặt lại tất cả thẻ về Hộp 1
                   </button>
                 </div>
               </div>
 
               {/* TÙY CHỌN MẶT TRƯỚC VÀ MẶT SAU THẺ FLASHCARD */}
-              <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-extrabold text-indigo-300 uppercase tracking-wider block text-[11px] flex items-center gap-1.5">
-                    <Eye className="w-4 h-4" />
-                    Cấu Hình Nâng Cao Nội Dung Mặt Trước & Mặt Sau Thẻ:
+              <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="border-b border-slate-800 pb-2">
+                  <span className="font-semibold text-slate-200 text-xs block">
+                    Nội dung hiển thị trên 2 mặt thẻ
                   </span>
                 </div>
 
                 {/* Quick Presets */}
                 <div className="space-y-1.5">
-                  <span className="text-[11px] text-slate-400 font-semibold block">Chọn nhanh mẫu thiết lập:</span>
+                  <span className="text-[11px] text-slate-400 block">Thiết lập nhanh:</span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     <button
                       type="button"
                       onClick={() => applyPresetFlashcardFields('hanzi_to_vi')}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-amber-300 cursor-pointer text-center"
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-medium text-slate-200 cursor-pointer text-center hover:border-slate-700 transition-colors"
                     >
-                      1. Chữ Hán ➔ Nghĩa + Pinyin
+                      Hán tự ➔ Nghĩa + Pinyin
                     </button>
                     <button
                       type="button"
                       onClick={() => applyPresetFlashcardFields('pinyin_to_hanzi')}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-emerald-300 cursor-pointer text-center"
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-medium text-slate-200 cursor-pointer text-center hover:border-slate-700 transition-colors"
                     >
-                      2. Pinyin ➔ Chữ Hán + Nghĩa
+                      Pinyin ➔ Hán tự + Nghĩa
                     </button>
                     <button
                       type="button"
                       onClick={() => applyPresetFlashcardFields('vi_to_hanzi')}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-cyan-300 cursor-pointer text-center"
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-medium text-slate-200 cursor-pointer text-center hover:border-slate-700 transition-colors"
                     >
-                      3. Tiếng Việt ➔ Chữ Hán
+                      Tiếng Việt ➔ Hán tự
                     </button>
                     <button
                       type="button"
                       onClick={() => applyPresetFlashcardFields('show_all')}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-indigo-300 cursor-pointer text-center"
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-medium text-slate-200 cursor-pointer text-center hover:border-slate-700 transition-colors"
                     >
-                      4. Hiện Tất Cả 2 Mặt
+                      Hiển thị tất cả
                     </button>
                   </div>
                 </div>
@@ -1691,10 +1691,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 {/* 2-COLUMN CHECKBOXES: FRONT & BACK */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   {/* FRONT SIDE PANEL */}
-                  <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                      <span className="font-bold text-indigo-400 text-xs flex items-center gap-1">
-                        📌 MẶT TRƯỚC HIỆN:
+                      <span className="font-semibold text-indigo-300 text-xs">
+                        Mặt trước thẻ:
                       </span>
                       <div className="flex items-center gap-2 text-[10px]">
                         <button
@@ -1710,7 +1710,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                           onClick={() => toggleAllSideFields('front', false)}
                           className="text-slate-400 hover:underline cursor-pointer"
                         >
-                          Xóa hết
+                          Bỏ chọn
                         </button>
                       </div>
                     </div>
@@ -1789,10 +1789,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </div>
 
                   {/* BACK SIDE PANEL */}
-                  <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                  <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                      <span className="font-bold text-emerald-400 text-xs flex items-center gap-1">
-                        🔄 MẶT SAU HIỆN:
+                      <span className="font-semibold text-emerald-300 text-xs">
+                        Mặt sau thẻ:
                       </span>
                       <div className="flex items-center gap-2 text-[10px]">
                         <button
@@ -1808,7 +1808,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                           onClick={() => toggleAllSideFields('back', false)}
                           className="text-slate-400 hover:underline cursor-pointer"
                         >
-                          Xóa hết
+                          Bỏ chọn
                         </button>
                       </div>
                     </div>

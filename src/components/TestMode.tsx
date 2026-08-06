@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
+  X,
   Timer,
   RotateCw,
   Sparkles,
@@ -296,8 +297,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
             <ArrowLeft className="w-5 h-5" />
             <span>Thoát</span>
           </button>
-          <div className="flex items-center gap-2 font-bold text-white">
-            <Settings className="w-5 h-5 text-indigo-400" />
+          <div className="font-bold text-white">
             <span>Cài Đặt Bài Kiểm Tra Từ Vựng</span>
           </div>
           <div className="w-16" />
@@ -608,15 +608,16 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
           <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-slate-100">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <Settings className="w-4 h-4 text-indigo-400" />
+                <div className="font-bold text-white text-sm">
                   <span>Cài Đặt Nhanh Bài Thi</span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsTestSettingsOpen(false)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg"
+                  className="p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+                  aria-label="Đóng"
                 >
-                  <XCircle className="w-5 h-5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
