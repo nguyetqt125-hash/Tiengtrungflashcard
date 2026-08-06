@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   GOOGLE_SHEET_WEBAPP_URL: 'google_sheet_webapp_url',
   GOOGLE_SHEET_AUTO_SYNC: 'google_sheet_auto_sync',
   STUDY_SETTINGS: 'hsk_app_study_settings_v1',
+  THEME: 'hsk_app_theme_v1',
 };
 
 export const APP_CONFIG = {

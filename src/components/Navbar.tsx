@@ -1,11 +1,14 @@
 import React from 'react';
-import { Plus, ChevronRight, BookOpen, GraduationCap, FileSpreadsheet } from 'lucide-react';
+import { Plus, ChevronRight, BookOpen, GraduationCap, Sun, Moon } from 'lucide-react';
+import { ThemeMode } from '../utils/theme';
 
 interface NavbarProps {
   currentCourseId?: string | null;
   currentCourseName?: string;
   currentLessonId?: string | null;
   currentLessonName?: string;
+  theme?: ThemeMode;
+  onToggleTheme?: () => void;
   onNavigateHome: () => void;
   onNavigateCourse: (courseId: string) => void;
   onOpenAddCourse?: () => void;
@@ -17,13 +20,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentCourseName,
   currentLessonId,
   currentLessonName,
+  theme = 'light',
+  onToggleTheme,
   onNavigateHome,
   onNavigateCourse,
   onOpenAddCourse,
   onOpenGoogleSheets,
 }) => {
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Brand */}
@@ -78,6 +83,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {onToggleTheme && (
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title={theme === 'dark' ? 'Đổi sang giao diện Sáng' : 'Đổi sang giao diện Tối'}
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Giao diện Sáng</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <span>Giao diện Tối</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {onOpenAddCourse && (
               <button
                 onClick={onOpenAddCourse}
