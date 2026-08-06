@@ -85,3 +85,54 @@ html.dark select {
   color: #f1f5f9 !important;
   border-color: #334155 !important;
 }
+
+/* =========================================================
+   LIGHT MODE OVERRIDES FOR FULLSCREEN MODALS & GAMES
+   (Applied when html does NOT have class "dark")
+   ========================================================= */
+html:not(.dark) .bg-slate-950 {
+  background-color: #f8fafc;
+}
+
+html:not(.dark) .bg-slate-900 {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-950\/60,
+html:not(.dark) .bg-slate-950\/70,
+html:not(.dark) .bg-slate-950\/80 {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/80 {
+  background-color: #f1f5f9;
+}
+
+html:not(.dark) .bg-slate-800\/40,
+html:not(.dark) .bg-slate-800\/50 {
+  background-color: #f8fafc;
+}
+
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-700 {
+  border-color: #e2e8f0;
+}
+
+/* Ensure buttons and elements with solid background colors retain their crisp text colors */
+button.bg-indigo-600,
+button.bg-emerald-600,
+button.bg-amber-600,
+button.bg-rose-600,
+button.bg-blue-600,
+button.bg-purple-600,
+.bg-indigo-600,
+.bg-emerald-600,
+.bg-rose-600,
+.bg-amber-600 {
+  color: #ffffff !important;
+}
+
