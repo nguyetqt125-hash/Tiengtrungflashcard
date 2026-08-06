@@ -226,7 +226,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
             {activeQuestion?.sentenceWithBlank}
           </h3>
 
-          {activeQuestion?.translation && (
+          {activeQuestion?.translation && settings.showHint !== false && settings.showSentenceTranslation !== false && (
             <p className="text-xs text-slate-400 mt-4 italic bg-slate-950 p-3 rounded-2xl border border-slate-800">
               💡 {activeQuestion.translation}
             </p>

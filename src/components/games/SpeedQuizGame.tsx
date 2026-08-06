@@ -225,6 +225,12 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
               <Volume2 className="w-5 h-5" />
             </button>
           </div>
+
+          {settings.showHint !== false && activeQuestion?.card.memoryTip && (
+            <p className="text-xs text-amber-300/90 mt-3 italic bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50">
+              💡 Gợi ý: {activeQuestion.card.memoryTip}
+            </p>
+          )}
         </div>
 
         {/* Input Options / Typing Form */}

@@ -287,6 +287,11 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
             <span className="text-base sm:text-lg font-black text-white font-serif">
               "{activeQuestion?.promptText}"
             </span>
+            {settings.showHint !== false && activeQuestion?.card.memoryTip && (
+              <span className="text-[11px] text-amber-300/90 block mt-1 italic">
+                💡 Gợi ý: {activeQuestion.card.memoryTip}
+              </span>
+            )}
           </div>
         </div>
 

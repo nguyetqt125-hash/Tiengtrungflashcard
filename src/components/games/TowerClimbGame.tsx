@@ -177,6 +177,11 @@ export const TowerClimbGame: React.FC<TowerClimbGameProps> = ({
                 <Volume2 className="w-4 h-4" />
               </button>
             </div>
+            {settings.showHint !== false && activeQuestion?.card.memoryTip && (
+              <span className="text-[11px] text-amber-300/90 block mt-0.5 italic">
+                💡 Gợi ý: {activeQuestion.card.memoryTip}
+              </span>
+            )}
           </div>
         </div>
 

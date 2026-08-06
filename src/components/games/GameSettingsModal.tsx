@@ -11,6 +11,7 @@ export interface GameCustomSettings {
   soundEnabled: boolean;
   timeLimitSeconds?: number;
   showSentenceTranslation?: boolean;
+  showHint?: boolean;
 }
 
 interface GameSettingsModalProps {
@@ -210,6 +211,26 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 );
               })}
             </div>
+          </div>
+
+          {/* Hint Toggle */}
+          <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+            <div>
+              <span className="font-semibold text-slate-200 block">Hiển thị gợi ý</span>
+              <span className="text-[11px] text-slate-400">Hiện hoặc ẩn câu dịch, nghĩa từ, hoặc mẹo nhớ trong ván đấu</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={localSettings.showHint !== false && localSettings.showSentenceTranslation !== false}
+              onChange={(e) =>
+                setLocalSettings({
+                  ...localSettings,
+                  showHint: e.target.checked,
+                  showSentenceTranslation: e.target.checked,
+                })
+              }
+              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-500"
+            />
           </div>
 
           {/* Sound toggle */}
