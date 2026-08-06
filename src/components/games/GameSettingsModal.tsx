@@ -7,6 +7,7 @@ export interface GameCustomSettings {
   questionCount: number;
   questionTypes: QuestionField[]; // Checkboxes for prompt types
   answerTypes: QuestionField[];   // Checkboxes for option types
+  answerMode?: 'choice' | 'typing'; // 'choice' (multiple choice) or 'typing' (keyboard input)
   soundEnabled: boolean;
   timeLimitSeconds?: number;
   showSentenceTranslation?: boolean;
@@ -265,6 +266,54 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   <Square className="w-4 h-4 text-slate-500 shrink-0" />
                 )}
                 <span>🔊 Nút nghe âm thanh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Answer Mode (Choice vs Typing) */}
+          <div className="space-y-2 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+            <label className="font-bold text-emerald-300 text-xs uppercase tracking-wider block mb-1">
+              ⌨️ Chế độ làm bài (Trắc nghiệm vs Tự gõ):
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLocalSettings({ ...localSettings, answerMode: 'choice' })}
+                className={`p-3 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                  (localSettings.answerMode || 'choice') === 'choice'
+                    ? 'bg-emerald-600/30 text-emerald-200 border-emerald-500/60 font-bold'
+                    : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                { (localSettings.answerMode || 'choice') === 'choice' ? (
+                  <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                )}
+                <div>
+                  <span className="block font-bold text-xs">Trắc nghiệm</span>
+                  <span className="text-[10px] text-slate-400">Chọn 1 trong 4 phương án</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalSettings({ ...localSettings, answerMode: 'typing' })}
+                className={`p-3 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                  localSettings.answerMode === 'typing'
+                    ? 'bg-emerald-600/30 text-emerald-200 border-emerald-500/60 font-bold'
+                    : 'bg-slate-800/60 text-slate-400 border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                { localSettings.answerMode === 'typing' ? (
+                  <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                )}
+                <div>
+                  <span className="block font-bold text-xs">Tự gõ / Đánh máy</span>
+                  <span className="text-[10px] text-slate-400">Nhập đáp án trực tiếp</span>
+                </div>
               </button>
             </div>
           </div>

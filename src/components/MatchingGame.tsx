@@ -68,6 +68,7 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
       questionCount: Math.min(cards.length, 10),
       questionTypes: ['definition', 'term'],
       answerTypes: ['term'],
+      answerMode: 'typing',
       soundEnabled: true,
     },
     matching: {

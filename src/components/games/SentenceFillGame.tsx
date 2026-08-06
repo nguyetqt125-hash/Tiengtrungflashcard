@@ -31,6 +31,8 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
     options: string[];
   } | null>(null);
 
+  const [typedInput, setTypedInput] = useState('');
+
   const [wrongCardShow, setWrongCardShow] = useState<{
     card: Flashcard;
     userSelectedText: string;
@@ -91,6 +93,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
       () => 0.5 - Math.random()
     );
 
+    setTypedInput('');
     setActiveQuestion({
       card: currentCard,
       sentenceWithBlank,
@@ -98,6 +101,51 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
       correctTerm: targetTerm,
       options,
     });
+  };
+
+  const checkTypedAnswer = (input: string, card: Flashcard): boolean => {
+    const cleanInput = input.trim().toLowerCase();
+    if (!cleanInput) return false;
+
+    const cleanTerm = card.term.trim().toLowerCase();
+    if (cleanInput === cleanTerm) return true;
+
+    if (card.pinyin) {
+      const cleanPinyin = card.pinyin.trim().toLowerCase();
+      const asciiPinyin = cleanPinyin.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+      const asciiInput = cleanInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+      if (cleanInput === cleanPinyin || asciiInput === asciiPinyin) return true;
+    }
+
+    const cleanDef = card.definition.trim().toLowerCase();
+    if (cleanInput === cleanDef) return true;
+
+    return false;
+  };
+
+  const handleTypingSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!activeQuestion) return;
+
+    const isRight = checkTypedAnswer(typedInput, activeQuestion.card);
+    recordCardReview(activeQuestion.card.id, isRight);
+
+    if (isRight) {
+      setScore((s) => s + 250); // bonus for typing
+      speakChinese(activeQuestion.card.term);
+
+      setTimeout(() => {
+        const nextIdx = currentIndex + 1;
+        setCurrentIndex(nextIdx);
+        generateRound(nextIdx, pool);
+      }, 500);
+    } else {
+      setWrongCardShow({
+        card: activeQuestion.card,
+        userSelectedText: typedInput || '(Chưa nhập gì)',
+        correctText: `${activeQuestion.card.term} (${activeQuestion.card.pinyin || ''})`,
+      });
+    }
   };
 
   const handleOptionClick = (optionText: string) => {
@@ -185,18 +233,45 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
           )}
         </div>
 
-        {/* Word Options Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {activeQuestion?.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => handleOptionClick(opt)}
-              className="p-4 bg-slate-900 hover:bg-indigo-950/80 border-2 border-slate-800 hover:border-indigo-400 text-white font-black text-lg font-serif rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
-            >
-              <span className="text-amber-300 group-hover:scale-110 transition-transform">{opt}</span>
-            </button>
-          ))}
-        </div>
+        {/* Input Area: Typing Form vs Multiple Choice Grid */}
+        {settings.answerMode === 'typing' ? (
+          <form onSubmit={handleTypingSubmit} className="space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                autoFocus
+                value={typedInput}
+                onChange={(e) => setTypedInput(e.target.value)}
+                placeholder="Gõ Chữ Hán, Pinyin hoặc Nghĩa Tiếng Việt..."
+                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-indigo-500/60 focus:border-indigo-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-indigo-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm font-serif"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-2 bottom-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center cursor-pointer active:scale-95"
+                title="Gửi đáp án (Nút Enter)"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 px-2">
+              <span>⌨️ Nhấn <strong>Enter</strong> để kiểm tra kết quả</span>
+              <span>Hỗ trợ nhập: Hán tự, Pinyin hoặc Tiếng Việt</span>
+            </div>
+          </form>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {activeQuestion?.options.map((opt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleOptionClick(opt)}
+                className="p-4 bg-slate-900 hover:bg-indigo-950/80 border-2 border-slate-800 hover:border-indigo-400 text-white font-black text-lg font-serif rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
+              >
+                <span className="text-amber-300 group-hover:scale-110 transition-transform">{opt}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Wrong Answer Explanation Popup Modal */}

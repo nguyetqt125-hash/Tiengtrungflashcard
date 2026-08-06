@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Zap, Volume2, Trophy, Brain, Sparkles } from 'lucide-react';
+import { Zap, Volume2, Trophy, Brain, Sparkles, Send } from 'lucide-react';
 import { Flashcard } from '../../types';
 import { speakChinese } from '../../utils/speech';
 import { recordCardReview } from '../../utils/srs';
@@ -30,6 +30,8 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
     correctOptionText: string;
     options: string[];
   } | null>(null);
+
+  const [typedInput, setTypedInput] = useState('');
 
   const [wrongCardShow, setWrongCardShow] = useState<{
     card: Flashcard;
@@ -100,6 +102,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
       .map((c) => getAnswerText(c, aType))
       .sort(() => 0.5 - Math.random());
 
+    setTypedInput('');
     setActiveQuestion({
       card: currentCard,
       qType,
@@ -107,6 +110,51 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
       correctOptionText,
       options: allOptions,
     });
+  };
+
+  const checkTypedAnswer = (input: string, card: Flashcard): boolean => {
+    const cleanInput = input.trim().toLowerCase();
+    if (!cleanInput) return false;
+
+    const cleanTerm = card.term.trim().toLowerCase();
+    if (cleanInput === cleanTerm) return true;
+
+    if (card.pinyin) {
+      const cleanPinyin = card.pinyin.trim().toLowerCase();
+      const asciiPinyin = cleanPinyin.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+      const asciiInput = cleanInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+      if (cleanInput === cleanPinyin || asciiInput === asciiPinyin) return true;
+    }
+
+    const cleanDef = card.definition.trim().toLowerCase();
+    if (cleanInput === cleanDef) return true;
+
+    return false;
+  };
+
+  const handleTypingSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!activeQuestion) return;
+
+    const isRight = checkTypedAnswer(typedInput, activeQuestion.card);
+    recordCardReview(activeQuestion.card.id, isRight);
+
+    if (isRight) {
+      setScore((s) => s + 200);
+      speakChinese(activeQuestion.card.term);
+
+      setTimeout(() => {
+        const nextIdx = currentIndex + 1;
+        setCurrentIndex(nextIdx);
+        generateRound(nextIdx, pool);
+      }, 400);
+    } else {
+      setWrongCardShow({
+        card: activeQuestion.card,
+        userSelectedText: typedInput || '(Chưa nhập gì)',
+        correctText: `${activeQuestion.card.term} (${activeQuestion.card.pinyin || ''}) - ${activeQuestion.card.definition}`,
+      });
+    }
   };
 
   const handleOptionClick = (optionText: string) => {
@@ -179,21 +227,48 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
           </div>
         </div>
 
-        {/* Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {activeQuestion?.options.map((opt, i) => (
-            <button
-              key={i}
-              onClick={() => handleOptionClick(opt)}
-              className="p-4 bg-slate-900 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg transition-all flex items-center gap-3 cursor-pointer group active:scale-98"
-            >
-              <span className="w-7 h-7 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center transition-colors">
-                {String.fromCharCode(65 + i)}
-              </span>
-              <span>{opt}</span>
-            </button>
-          ))}
-        </div>
+        {/* Input Options / Typing Form */}
+        {settings.answerMode === 'typing' ? (
+          <form onSubmit={handleTypingSubmit} className="space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                autoFocus
+                value={typedInput}
+                onChange={(e) => setTypedInput(e.target.value)}
+                placeholder="Nhập Chữ Hán, Pinyin hoặc Tiếng Việt..."
+                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-amber-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm font-serif"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-2 bottom-2 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl shadow-md transition-all flex items-center justify-center cursor-pointer active:scale-95"
+                title="Gửi đáp án (Nút Enter)"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 px-2">
+              <span>⌨️ Nhấn <strong>Enter</strong> để kiểm tra kết quả</span>
+              <span>Chấp nhận: Chữ Hán, Pinyin hoặc Tiếng Việt</span>
+            </div>
+          </form>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeQuestion?.options.map((opt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleOptionClick(opt)}
+                className="p-4 bg-slate-900 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg transition-all flex items-center gap-3 cursor-pointer group active:scale-98"
+              >
+                <span className="w-7 h-7 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center transition-colors">
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <span>{opt}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Wrong Answer Explanation Popup Modal */}
