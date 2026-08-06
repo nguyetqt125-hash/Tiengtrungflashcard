@@ -1,0 +1,8 @@
+{
+  "name": "Remix FlashCard tiếng trung bản cuối",
+  "description": "Ứng dụng học từ vựng tiếng Trung với Flashcard 7 trường thông tin, tạo lớp/khóa/bài học, nhập từ vựng linh hoạt, chế độ Học, Game ghép từ, và Bài kiểm tra tùy chỉnh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

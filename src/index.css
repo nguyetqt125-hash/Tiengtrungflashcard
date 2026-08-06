@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .font-chinese {
+    font-family: 'Noto Serif SC', 'STKaiti', 'Kaiti', 'KaiTi', '楷体', 'DFKai-SB', 'Noto Sans SC', serif;
+  }
+  .font-chinese-heading {
+    font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', 'STKaiti', 'Kaiti', 'KaiTi', '楷体', serif;
+  }
+  .font-kai {
+    font-family: 'STKaiti', 'Kaiti', 'KaiTi', '楷体', 'DFKai-SB', 'Noto Serif SC', serif;
+  }
+}
+
+body {
+  font-family: 'Be Vietnam Pro', 'Noto Serif SC', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
