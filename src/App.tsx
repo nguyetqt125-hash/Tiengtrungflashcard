@@ -13,7 +13,6 @@ import {
   deleteCard,
   initializeStorage,
 } from './utils/storage';
-import { getStoredTheme, applyTheme, ThemeMode } from './utils/theme';
 
 import { Navbar } from './components/Navbar';
 import { CourseList } from './components/CourseList';
@@ -72,9 +71,6 @@ export default function App() {
     name: string;
   } | null>(null);
 
-  // Theme State
-  const [theme, setTheme] = useState<ThemeMode>('light');
-
   // Load state on boot
   const reloadData = () => {
     initializeStorage();
@@ -85,16 +81,7 @@ export default function App() {
 
   useEffect(() => {
     reloadData();
-    const initialTheme = getStoredTheme();
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
   }, []);
-
-  const handleToggleTheme = () => {
-    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
-  };
 
   // Handlers for Navigation
   const handleNavigateHome = () => {
@@ -209,8 +196,6 @@ export default function App() {
         currentCourseName={currentCourse?.name}
         currentLessonId={currentLessonId}
         currentLessonName={currentLesson?.name}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
         onNavigateHome={handleNavigateHome}
         onNavigateCourse={(id) => handleSelectCourse(id)}
         onOpenAddCourse={() => {
