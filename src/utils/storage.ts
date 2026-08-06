@@ -104,6 +104,12 @@ export const deleteCard = (cardId: string) => {
   saveCards(cards);
 };
 
+export const deleteCardsBatch = (cardIds: string[]) => {
+  const set = new Set(cardIds);
+  const cards = getCards().filter((c) => !set.has(c.id));
+  saveCards(cards);
+};
+
 // Progress
 export const getProgress = (): Record<string, CardProgress> => {
   try {

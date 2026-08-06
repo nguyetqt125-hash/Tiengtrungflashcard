@@ -21,6 +21,10 @@ import {
   CheckCheck,
   Clock,
   AlertCircle,
+  CheckSquare,
+  Square,
+  ListChecks,
+  X,
 } from 'lucide-react';
 import { Course, Lesson, Flashcard } from '../types';
 import { speakChinese } from '../utils/speech';
@@ -41,6 +45,7 @@ interface LessonDetailProps {
   onAddSingleCard: (lessonId: string) => void;
   onEditCard: (card: Flashcard) => void;
   onDeleteCard: (card: Flashcard) => void;
+  onDeleteCardsBatch?: (cardIds: string[]) => void;
   onStartStudy: (lesson: Lesson, cards: Flashcard[]) => void;
   onStartGame: (lesson: Lesson, cards: Flashcard[]) => void;
   onStartTest: (lesson: Lesson, cards: Flashcard[]) => void;
@@ -60,6 +65,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   onAddSingleCard,
   onEditCard,
   onDeleteCard,
+  onDeleteCardsBatch,
   onStartStudy,
   onStartGame,
   onStartTest,
@@ -67,6 +73,43 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
   const [srsTick, setSrsTick] = useState(0);
+
+  // Batch Select State
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [isConfirmBatchDeleteOpen, setIsConfirmBatchDeleteOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSelectMode(false);
+    setSelectedCardIds([]);
+    setIsConfirmBatchDeleteOpen(false);
+  }, [selectedLessonId]);
+
+  const toggleSelectCard = (id: string) => {
+    setSelectedCardIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllFiltered = (filteredCardList: Flashcard[]) => {
+    const allFilteredIds = filteredCardList.map((c) => c.id);
+    const areAllSelected =
+      allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedCardIds.includes(id));
+    if (areAllSelected) {
+      setSelectedCardIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedCardIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleConfirmBatchDelete = () => {
+    if (selectedCardIds.length === 0) return;
+    if (onDeleteCardsBatch) {
+      onDeleteCardsBatch(selectedCardIds);
+    }
+    setSelectedCardIds([]);
+    setIsConfirmBatchDeleteOpen(false);
+  };
 
   useEffect(() => {
     const handleSrsUpdated = () => setSrsTick((t) => t + 1);
@@ -216,37 +259,110 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
         })()}
 
         {/* Filter & Search Bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm từ vựng, pinyin, định nghĩa..."
-              className="w-full pl-10 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900 font-medium"
-            />
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm từ vựng, pinyin, định nghĩa..."
+                className="w-full pl-10 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900 font-medium"
+              />
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {filteredCards.length > 0 && (
-              <button
-                onClick={() => {
-                  const ids = filteredCards.map((c) => c.id);
-                  setBatchCardMasteryLevel(ids, 2);
-                }}
-                className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                title="Đánh dấu tất cả các từ đang hiển thị là đã thuộc (Chuyển sang Hộp 3 xa nhất)"
-              >
-                <CheckCheck className="w-4 h-4" />
-                <span>Thuộc Tất Cả ({filteredCards.length})</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+              {filteredCards.length > 0 && !isSelectMode && (
+                <button
+                  onClick={() => {
+                    const ids = filteredCards.map((c) => c.id);
+                    setBatchCardMasteryLevel(ids, 2);
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Đánh dấu tất cả các từ đang hiển thị là đã thuộc (Chuyển sang Hộp 3 xa nhất)"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                  <span>Thuộc Tất Cả ({filteredCards.length})</span>
+                </button>
+              )}
 
-            <div className="text-xs text-slate-500 font-medium shrink-0">
-              Hiển thị <strong className="text-slate-900">{filteredCards.length}</strong> / {lessonCards.length} thẻ
+              {/* Batch Select Toggle Button */}
+              {filteredCards.length > 0 && (
+                <button
+                  onClick={() => {
+                    setIsSelectMode(!isSelectMode);
+                    if (isSelectMode) {
+                      setSelectedCardIds([]);
+                    }
+                  }}
+                  className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                    isSelectMode
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border-slate-200 hover:border-indigo-200'
+                  }`}
+                  title="Bật/tắt chế độ chọn nhiều thẻ để xóa hoặc quản lý hàng loạt"
+                >
+                  <ListChecks className="w-4 h-4" />
+                  <span>{isSelectMode ? 'Đang Chọn Thẻ' : 'Chọn Nhiều Thẻ'}</span>
+                </button>
+              )}
+
+              <div className="text-xs text-slate-500 font-medium shrink-0">
+                Hiển thị <strong className="text-slate-900">{filteredCards.length}</strong> / {lessonCards.length} thẻ
+              </div>
             </div>
           </div>
+
+          {/* Active Batch Selection Toolbar */}
+          {isSelectMode && (
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handleSelectAllFiltered(filteredCards)}
+                  className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  {filteredCards.length > 0 && filteredCards.every((c) => selectedCardIds.includes(c.id)) ? (
+                    <>
+                      <CheckSquare className="w-4 h-4 text-indigo-600" />
+                      <span>Bỏ Chọn Tất Cả ({filteredCards.length})</span>
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-4 h-4 text-slate-400" />
+                      <span>Chọn Tất Cả ({filteredCards.length})</span>
+                    </>
+                  )}
+                </button>
+
+                <span className="text-xs font-extrabold text-indigo-900 bg-indigo-100/90 px-3 py-1 rounded-full border border-indigo-200">
+                  Đã chọn: <span className="text-indigo-700">{selectedCardIds.length}</span> / {filteredCards.length} thẻ
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={selectedCardIds.length === 0}
+                  onClick={() => setIsConfirmBatchDeleteOpen(true)}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Xóa {selectedCardIds.length} Thẻ Đã Chọn</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSelectMode(false);
+                    setSelectedCardIds([]);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  title="Thoát chế độ chọn"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Flashcards Grid */}
@@ -276,21 +392,52 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCards.map((card) => {
               const cardMastery = masteryMap[card.id]?.level ?? 0;
+              const isSelected = selectedCardIds.includes(card.id);
+
               return (
                 <div
                   key={card.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  onClick={() => {
+                    if (isSelectMode) {
+                      toggleSelectCard(card.id);
+                    }
+                  }}
+                  className={`bg-white rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group relative ${
+                    isSelectMode ? 'cursor-pointer select-none' : ''
+                  } ${
+                    isSelected
+                      ? 'border-2 border-indigo-500 bg-indigo-50/20 ring-2 ring-indigo-500/20 shadow-sm'
+                      : 'border border-slate-200'
+                  }`}
                 >
+                  {/* Checkbox Overlay in Selection Mode */}
+                  {isSelectMode && (
+                    <div className="absolute top-3 left-3 z-10 flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleSelectCard(card.id);
+                        }}
+                        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     {/* Card Top Header */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className={`flex items-start justify-between gap-2 border-b border-slate-100 pb-3 ${isSelectMode ? 'pl-7' : ''}`}>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="text-3xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors font-chinese">
                             {card.term}
                           </h4>
                           <button
-                            onClick={() => speakChinese(card.term)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakChinese(card.term);
+                            }}
                             className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                             title="Phát âm tiếng Trung"
                           >
@@ -337,14 +484,20 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
 
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => onEditCard(card)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCard(card);
+                          }}
                           className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
                           title="Sửa thẻ"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDeleteCard(card)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteCard(card);
+                          }}
                           className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
                           title="Xóa thẻ"
                         >
@@ -374,7 +527,10 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                           </div>
                           <button
                             type="button"
-                            onClick={() => speakChinese(card.example)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakChinese(card.example);
+                            }}
                             className="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer shrink-0 flex items-center gap-1 font-bold text-[11px]"
                             title="Nghe phát âm ví dụ"
                           >
@@ -408,7 +564,11 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                       </span>
                       <select
                         value={cardMastery}
-                        onChange={(e) => setCardMasteryLevel(card.id, Number(e.target.value))}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setCardMasteryLevel(card.id, Number(e.target.value));
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className={`text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-2 transition-colors ${
                           cardMastery === 2
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-500'
@@ -424,7 +584,10 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                     </div>
 
                     <button
-                      onClick={() => setCardMasteryLevel(card.id, cardMastery === 2 ? 0 : 2)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCardMasteryLevel(card.id, cardMastery === 2 ? 0 : 2);
+                      }}
                       className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                         cardMastery === 2
                           ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-2xs'
@@ -461,6 +624,43 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Batch Delete Confirmation Modal */}
+        {isConfirmBatchDeleteOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200">
+              <div className="flex items-center gap-3 text-rose-600">
+                <div className="p-3 bg-rose-100 rounded-2xl">
+                  <Trash2 className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Xác nhận xóa nhiều thẻ</h3>
+                  <p className="text-xs text-slate-500">Hành động này không thể hoàn tác</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-700 leading-relaxed bg-rose-50/60 p-4 rounded-2xl border border-rose-100 font-medium">
+                Bạn có chắc chắn muốn xóa vĩnh viễn <strong className="text-rose-700 font-extrabold">{selectedCardIds.length}</strong> thẻ từ vựng đã chọn khỏi bài học này?
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setIsConfirmBatchDeleteOpen(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={handleConfirmBatchDelete}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Xóa {selectedCardIds.length} Thẻ</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

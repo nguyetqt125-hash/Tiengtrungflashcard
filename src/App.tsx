@@ -11,6 +11,7 @@ import {
   saveCards,
   addCardsBatch,
   deleteCard,
+  deleteCardsBatch,
   initializeStorage,
 } from './utils/storage';
 
@@ -267,6 +268,10 @@ export default function App() {
               setIsCardModalOpen(true);
             }}
             onDeleteCard={(card) => requestDelete('card', card.id, card.term)}
+            onDeleteCardsBatch={(cardIds) => {
+              deleteCardsBatch(cardIds);
+              reloadData();
+            }}
             onStartStudy={(lesson, cards) => {
               setActiveLessonForMode({ lesson, cards });
               setActiveMode('study');
