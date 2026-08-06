@@ -119,21 +119,24 @@ export const SrsModal: React.FC<SrsModalProps> = ({
     const level = mastery?.level ?? 0;
     if (level === 2) {
       return (
-        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold rounded-full">
-          Hộp 3 (Thành thục)
+        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold rounded-full flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          Hộp 3 • Đã thuộc (7 ngày)
         </span>
       );
     }
     if (level === 1) {
       return (
-        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold rounded-full">
-          Hộp 2 (Đang học)
+        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold rounded-full flex items-center gap-1">
+          <Brain className="w-3 h-3 text-indigo-600" />
+          Hộp 2 • Đang học (3 ngày)
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold rounded-full">
-        Hộp 1 (Cần ôn)
+      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold rounded-full flex items-center gap-1">
+        <Sparkles className="w-3 h-3 text-amber-600" />
+        Hộp 1 • Chưa thuộc (1 ngày)
       </span>
     );
   };
@@ -367,7 +370,18 @@ export const SrsModal: React.FC<SrsModalProps> = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                    {/* Direct SRS Box Selector */}
+                    <select
+                      value={masteryMap[card.id]?.level ?? 0}
+                      onChange={(e) => setCardMasteryLevel(card.id, Number(e.target.value))}
+                      className="text-xs font-bold px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                    >
+                      <option value={0}>📦 Hộp 1 (Chưa thuộc)</option>
+                      <option value={1}>📦 Hộp 2 (Đang học)</option>
+                      <option value={2}>📦 Hộp 3 (Đã thuộc)</option>
+                    </select>
+
                     {/* Mark as Mastered (Box 3) Button */}
                     <button
                       onClick={() => handleToggleCardMastered(card.id, masteryMap[card.id]?.level ?? 0)}
@@ -379,7 +393,7 @@ export const SrsModal: React.FC<SrsModalProps> = ({
                       title={(masteryMap[card.id]?.level ?? 0) === 2 ? "Đã ở Hộp 3 (Xa nhất/Thành thục). Nhấn để chuyển lại Hộp 1" : "Đánh dấu là đã thuộc (Chuyển sang Hộp 3 xa nhất)"}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{(masteryMap[card.id]?.level ?? 0) === 2 ? 'Đã thuộc' : 'Thuộc (Hộp 3)'}</span>
+                      <span>{(masteryMap[card.id]?.level ?? 0) === 2 ? 'Đã thuộc' : 'Thuộc'}</span>
                     </button>
 
                     <button

@@ -33,7 +33,11 @@ export const CourseList: React.FC<CourseListProps> = ({
   useEffect(() => {
     const handleSrsUpdated = () => setSrsTick((t) => t + 1);
     window.addEventListener('srs-updated', handleSrsUpdated);
-    return () => window.removeEventListener('srs-updated', handleSrsUpdated);
+    window.addEventListener('storage', handleSrsUpdated);
+    return () => {
+      window.removeEventListener('srs-updated', handleSrsUpdated);
+      window.removeEventListener('storage', handleSrsUpdated);
+    };
   }, []);
 
   const streakInfo = getStreakInfo();

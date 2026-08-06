@@ -19,6 +19,8 @@ import {
   PenTool,
   CheckCircle2,
   CheckCheck,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { Course, Lesson, Flashcard } from '../types';
 import { speakChinese } from '../utils/speech';
@@ -311,6 +313,26 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                             {card.pinyin}
                           </span>
                         )}
+
+                        {/* Explicit Card SRS Status Pill */}
+                        <div className="mt-1">
+                          {cardMastery === 2 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold rounded-full">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Hộp 3 • Đã thuộc (7 ngày)
+                            </span>
+                          ) : cardMastery === 1 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold rounded-full">
+                              <Brain className="w-3 h-3 text-indigo-600" />
+                              Hộp 2 • Đang học (3 ngày)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold rounded-full">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              Hộp 1 • Chưa thuộc (1 ngày)
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1">
@@ -380,32 +402,60 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                   {/* Interactive Card SRS Level Selector Badge */}
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
                         <Brain className="w-3.5 h-3.5 text-indigo-500" />
-                        Hộp SRS:
+                        Trạng thái SRS:
                       </span>
                       <select
                         value={cardMastery}
                         onChange={(e) => setCardMasteryLevel(card.id, Number(e.target.value))}
-                        className="text-xs font-bold px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-2 transition-colors ${
+                          cardMastery === 2
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-500'
+                            : cardMastery === 1
+                            ? 'bg-indigo-50 text-indigo-800 border-indigo-300 focus:ring-indigo-500'
+                            : 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-500'
+                        }`}
                       >
-                        <option value={0}>📦 Hộp 1 (1 ngày)</option>
-                        <option value={1}>📦 Hộp 2 (3 ngày)</option>
-                        <option value={2}>📦 Hộp 3 (7 ngày)</option>
+                        <option value={0}>📦 Hộp 1 (1 ngày) - Chưa thuộc</option>
+                        <option value={1}>📦 Hộp 2 (3 ngày) - Đang học</option>
+                        <option value={2}>📦 Hộp 3 (7 ngày) - Đã thuộc</option>
                       </select>
                     </div>
 
                     <button
                       onClick={() => setCardMasteryLevel(card.id, cardMastery === 2 ? 0 : 2)}
-                      className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 active:scale-95 ${
+                      className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                         cardMastery === 2
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                          : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-2xs'
+                          ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-2xs'
+                          : cardMastery === 1
+                          ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 shadow-2xs'
+                          : 'bg-amber-500 text-slate-950 border-amber-500 hover:bg-amber-400 shadow-2xs'
                       }`}
-                      title={cardMastery === 2 ? "Đã ở Hộp 3 (Xa nhất). Nhấn để chọn lại Hộp 1" : "Đánh dấu đã thuộc (Chuyển sang Hộp 3 xa nhất)"}
+                      title={
+                        cardMastery === 2
+                          ? 'Đã thuộc (Hộp 3 - Ôn sau 7 ngày). Nhấn để chọn lại Hộp 1 (Chưa thuộc)'
+                          : cardMastery === 1
+                          ? 'Đang học (Hộp 2 - Ôn sau 3 ngày). Nhấn để chuyển thành Đã thuộc (Hộp 3)'
+                          : 'Chưa thuộc (Hộp 1 - Ôn hàng ngày). Nhấn để chuyển thành Đã thuộc (Hộp 3)'
+                      }
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{cardMastery === 2 ? 'Đã thuộc' : 'Thuộc'}</span>
+                      {cardMastery === 2 ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Đã thuộc</span>
+                        </>
+                      ) : cardMastery === 1 ? (
+                        <>
+                          <Brain className="w-3.5 h-3.5" />
+                          <span>Đang học</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Chưa thuộc</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
