@@ -1404,7 +1404,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 {/* HÌNH THỨC TRẢ LỜI */}
                 <div className="space-y-1.5">
                   <span className="text-slate-200 font-semibold block text-xs">Hình thức trả lời:</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -1433,6 +1433,21 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       }`}
                     >
                       Tự gõ từ
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnswerInputMode('mixed');
+                        saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, 'mixed', autoSpeak, isSrsEnabled);
+                      }}
+                      className={`p-2.5 rounded-xl text-center border font-semibold text-xs cursor-pointer transition-colors ${
+                        answerInputMode === 'mixed'
+                          ? 'bg-emerald-600/20 text-emerald-200 border-emerald-500 font-bold'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      Chọn cả 2 (Xáo trộn)
                     </button>
                   </div>
                 </div>

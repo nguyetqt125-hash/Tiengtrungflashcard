@@ -355,36 +355,66 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               <label className="block text-xs font-bold text-slate-300 mb-2">
                 2. Dạng bài tập (Chọn ít nhất 1):
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {[
-                  { id: 'mcq', label: 'Trắc nghiệm 4 đáp án' },
-                  { id: 'typing', label: 'Tự luận (Nhập đáp án)' },
-                  { id: 'tf', label: 'Đúng / Sai' },
-                ].map((format) => {
-                  const active = settings.formatTypes.includes(format.id as TestFormatType);
-                  return (
-                    <button
-                      type="button"
-                      key={format.id}
-                      onClick={() => {
-                        let updated = [...settings.formatTypes];
-                        if (active) {
-                          if (updated.length > 1) updated = updated.filter((f) => f !== format.id);
-                        } else {
-                          updated.push(format.id as TestFormatType);
-                        }
-                        setSettings({ ...settings, formatTypes: updated });
-                      }}
-                      className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                        active
-                          ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
-                          : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {format.label}
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, formatTypes: ['mcq'] })}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-left ${
+                    settings.formatTypes.length === 1 && settings.formatTypes.includes('mcq')
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div>Trắc nghiệm 4 đáp án</div>
+                  <div className="text-[10px] font-normal text-slate-400 mt-0.5">Chọn 1 trong 4 phương án A, B, C, D</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, formatTypes: ['typing'] })}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-left ${
+                    settings.formatTypes.length === 1 && settings.formatTypes.includes('typing')
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div>Tự luận (Nhập đáp án)</div>
+                  <div className="text-[10px] font-normal text-slate-400 mt-0.5">Gõ chính xác câu trả lời từ bàn phím</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSettings({ ...settings, formatTypes: ['mcq', 'typing'] })}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-left ${
+                    settings.formatTypes.includes('mcq') && settings.formatTypes.includes('typing') && !settings.formatTypes.includes('tf')
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div>Chọn cả 2 (Xáo trộn ngẫu nhiên)</div>
+                  <div className="text-[10px] font-normal text-slate-400 mt-0.5">Xáo trộn câu trắc nghiệm & tự gõ</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    let updated = [...settings.formatTypes];
+                    if (updated.includes('tf')) {
+                      if (updated.length > 1) updated = updated.filter((f) => f !== 'tf');
+                    } else {
+                      updated.push('tf');
+                    }
+                    setSettings({ ...settings, formatTypes: updated });
+                  }}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-left ${
+                    settings.formatTypes.includes('tf')
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div>Đúng / Sai</div>
+                  <div className="text-[10px] font-normal text-slate-400 mt-0.5">Xác nhận cặp từ ghép Đúng hay Sai</div>
+                </button>
               </div>
             </div>
 

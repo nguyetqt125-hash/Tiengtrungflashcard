@@ -60,6 +60,7 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
   const [practiceMode, setPracticeMode] = useState<'first_1_faint' | 'first_5_faint' | 'all_faint' | 'blank'>('first_1_faint'); // Mờ 1 dòng / Mờ 5 dòng / Mờ tất cả / Không mờ
   const [showPinyinLines, setShowPinyinLines] = useState<boolean>(true); // Top 2 dashed lines for Pinyin above grid
   const [showStrokeOrder, setShowStrokeOrder] = useState<boolean>(true);
+  const [headerFirstPageOnly, setHeaderFirstPageOnly] = useState<boolean>(false); // Only show header & student info on page 1
   const [pagesPerChar, setPagesPerChar] = useState<number>(0); // 0 = Liền mạch (Nhiều chữ/trang), 1 = 1 trang/chữ, 2 = 2 trang/chữ, 3 = 3 trang/chữ
   const [boxesPerRow, setBoxesPerRow] = useState<number>(11); // 11 ô / dòng A4
 
@@ -657,6 +658,19 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                   className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
                 />
               </label>
+
+              <label className="flex items-center justify-between text-xs text-slate-300 cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div className="flex flex-col pr-2">
+                  <span className="font-bold text-slate-200">Ẩn Tiêu Đề & Họ Tên Từ Trang 2</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">Chỉ hiện tiêu đề & khung Họ tên ở trang đầu</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={headerFirstPageOnly}
+                  onChange={(e) => setHeaderFirstPageOnly(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer shrink-0"
+                />
+              </label>
             </div>
           </div>
         </div>
@@ -770,27 +784,32 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
 
             const totalPageCount = pages.length;
 
-            return pages.map((page) => (
-              <div
-                key={`a4-page-${page.pageIndex}`}
-                className="a4-page w-full max-w-[210mm] w-[210mm] min-h-[297mm] h-auto sm:h-[297mm] bg-white text-slate-900 rounded-sm p-[10mm] sm:p-[12mm] shadow-2xl flex flex-col justify-between box-border overflow-hidden select-none"
-              >
-                {/* 1. Page Top Header */}
-                <div className="border-b-2 border-slate-900 pb-2 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0">
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
-                      {worksheetTitle || 'VỞ TẬP VIẾT CHỮ HÁN'}
-                    </h1>
-                    <p className="text-[11px] text-slate-600 font-bold mt-0.5">
-                      Giấy Kẻ Ô Luyện Viết Chữ Hán A4 • 田字格 (Tianzige Worksheet)
-                    </p>
-                  </div>
+            return pages.map((page) => {
+              const showPageHeader = !headerFirstPageOnly || page.pageIndex === 1;
 
-                  <div className="text-[11px] text-slate-800 space-y-0.5 font-bold border-l-2 border-slate-300 pl-3">
-                    <div>Họ & Tên: .............................................................</div>
-                    <div>Lớp / Bài: ...... / ...... • Ngày: ...... / ...... / 20......</div>
-                  </div>
-                </div>
+              return (
+                <div
+                  key={`a4-page-${page.pageIndex}`}
+                  className="a4-page w-full max-w-[210mm] w-[210mm] min-h-[297mm] h-auto sm:h-[297mm] bg-white text-slate-900 rounded-sm p-[10mm] sm:p-[12mm] shadow-2xl flex flex-col justify-between box-border overflow-hidden select-none"
+                >
+                  {/* 1. Page Top Header */}
+                  {showPageHeader && (
+                    <div className="border-b-2 border-slate-900 pb-2 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0">
+                      <div>
+                        <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
+                          {worksheetTitle || 'VỞ TẬP VIẾT CHỮ HÁN'}
+                        </h1>
+                        <p className="text-[11px] text-slate-600 font-bold mt-0.5">
+                          Giấy Kẻ Ô Luyện Viết Chữ Hán A4 • 田字格 (Tianzige Worksheet)
+                        </p>
+                      </div>
+
+                      <div className="text-[11px] text-slate-800 space-y-0.5 font-bold border-l-2 border-slate-300 pl-3">
+                        <div>Họ & Tên: .............................................................</div>
+                        <div>Lớp / Bài: ...... / ...... • Ngày: ...... / ...... / 20......</div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* 2. Character Blocks inside this A4 Page */}
                 <div className="flex-1 space-y-4 overflow-hidden my-auto">
@@ -931,7 +950,8 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                   </div>
                 </div>
               </div>
-            ));
+            );
+          });
           })()}
         </div>
       </div>
