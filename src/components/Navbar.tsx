@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ChevronRight, BookOpen, GraduationCap, FileSpreadsheet } from 'lucide-react';
+import { Plus, ChevronRight, BookOpen, GraduationCap, FileText } from 'lucide-react';
 
 interface NavbarProps {
   currentCourseId?: string | null;
@@ -10,6 +10,7 @@ interface NavbarProps {
   onNavigateCourse: (courseId: string) => void;
   onOpenAddCourse?: () => void;
   onOpenGoogleSheets?: () => void;
+  onOpenWorksheet?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigateCourse,
   onOpenAddCourse,
   onOpenGoogleSheets,
+  onOpenWorksheet,
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
@@ -78,6 +80,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {onOpenWorksheet && (
+              <button
+                onClick={onOpenWorksheet}
+                className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl font-bold text-xs border border-amber-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Tạo vở tập viết chữ Hán PDF"
+              >
+                <FileText className="w-4 h-4 text-amber-600" />
+                <span className="hidden sm:inline">Vở Tập Viết (A4)</span>
+              </button>
+            )}
+
             {onOpenAddCourse && (
               <button
                 onClick={onOpenAddCourse}

@@ -52,6 +52,7 @@ interface LessonDetailProps {
   onStartStudy: (lesson: Lesson, cards: Flashcard[]) => void;
   onStartGame: (lesson: Lesson, cards: Flashcard[]) => void;
   onStartTest: (lesson: Lesson, cards: Flashcard[]) => void;
+  onOpenWorksheet?: () => void;
 }
 
 export const LessonDetail: React.FC<LessonDetailProps> = ({
@@ -72,6 +73,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   onStartStudy,
   onStartGame,
   onStartTest,
+  onOpenWorksheet,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
@@ -307,6 +309,17 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                     <FileCheck2 className="w-5 h-5" />
                     <span>📝 Làm Bài Kiểm Tra</span>
                   </button>
+
+                  {onOpenWorksheet && (
+                    <button
+                      disabled={lessonCards.length === 0}
+                      onClick={onOpenWorksheet}
+                      className="px-5 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-amber-300 border border-slate-700 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText className="w-5 h-5 text-amber-400" />
+                      <span>🖨️ In Vở Tập Viết (A4)</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

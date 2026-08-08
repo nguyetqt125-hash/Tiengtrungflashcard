@@ -28,6 +28,7 @@ import { SrsModal } from './components/SrsModal';
 import { StudyMode } from './components/StudyMode';
 import { MatchingGame } from './components/MatchingGame';
 import { TestMode } from './components/TestMode';
+import { HanziWorksheetModal } from './components/HanziWorksheetModal';
 
 export default function App() {
   // Navigation View State: 'courses' | 'lessons'
@@ -63,6 +64,9 @@ export default function App() {
   // SRS Modal State
   const [isSrsModalOpen, setIsSrsModalOpen] = useState(false);
   const [srsModalFilter, setSrsModalFilter] = useState<'due' | 'box1' | 'box2' | 'box3' | 'all'>('due');
+
+  // Worksheet Printable Modal State
+  const [isWorksheetOpen, setIsWorksheetOpen] = useState(false);
 
   // Delete Confirm Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -204,6 +208,7 @@ export default function App() {
           setIsCourseModalOpen(true);
         }}
         onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
+        onOpenWorksheet={() => setIsWorksheetOpen(true)}
       />
 
       {/* Main View Container */}
@@ -284,6 +289,7 @@ export default function App() {
               setActiveLessonForMode({ lesson, cards });
               setActiveMode('test');
             }}
+            onOpenWorksheet={() => setIsWorksheetOpen(true)}
           />
         )}
       </main>
@@ -403,6 +409,14 @@ export default function App() {
           setActiveLessonForMode({ lesson: virtualLesson, cards: srsCards });
           setActiveMode('study');
         }}
+      />
+
+      {/* Printable Hanzi Worksheet Modal */}
+      <HanziWorksheetModal
+        isOpen={isWorksheetOpen}
+        onClose={() => setIsWorksheetOpen(false)}
+        cards={currentLessonId ? cards.filter((c) => c.lessonId === currentLessonId) : cards}
+        lessonTitle={currentLesson?.name || 'Vở Tập Viết Chữ Hán'}
       />
     </div>
   );
