@@ -678,13 +678,16 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
             )}
 
             {/* Character Items List */}
-            {!isLoading &&
-              charItems.map((item, idx) => {
+            {!isLoading && (() => {
+              const totalPageCount = pagesPerChar > 0 ? charItems.length * pagesPerChar : charItems.length;
+
+              return charItems.map((item, idx) => {
                 const totalPagesForChar = pagesPerChar > 0 ? pagesPerChar : 1;
 
                 return Array.from({ length: totalPagesForChar }).map((_, pageIdx) => {
                   const isFirstPage = pageIdx === 0;
                   const isLastPage = pageIdx === totalPagesForChar - 1;
+                  const globalPageIndex = pagesPerChar > 0 ? (idx * pagesPerChar + pageIdx + 1) : (idx + 1);
 
                   return (
                     <div
@@ -810,10 +813,24 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                           );
                         })}
                       </div>
+
+                      {/* A4 Page Footer Numbering */}
+                      <div className="page-footer pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-medium select-none">
+                        <span className="truncate max-w-[60%]">
+                          {worksheetTitle || 'Vở Tập Viết Chữ Hán A4'}
+                        </span>
+                        <div className="flex items-center gap-1.5 font-bold text-slate-700 bg-slate-100/80 px-2.5 py-0.5 rounded-full border border-slate-200 shrink-0">
+                          <span>Trang</span>
+                          <span className="text-emerald-700 font-black">{globalPageIndex}</span>
+                          <span className="text-slate-400">/</span>
+                          <span>{totalPageCount}</span>
+                        </div>
+                      </div>
                     </div>
                   );
                 });
-              })}
+              });
+            })()}
           </div>
         </div>
       </div>
