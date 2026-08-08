@@ -11,6 +11,8 @@ import {
   Flame,
   Send,
   Feather,
+  XCircle,
+  CheckCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Flashcard } from '../../types';
@@ -18,6 +20,7 @@ import { speakChinese } from '../../utils/speech';
 import { recordCardReview } from '../../utils/srs';
 import { GameCustomSettings, QuestionField } from './GameSettingsModal';
 import { WrongAnswerModal } from './WrongAnswerModal';
+import { evaluateAnswer } from '../../utils/answerChecker';
 
 interface FlappyBirdGameProps {
   cards: Flashcard[];
@@ -270,12 +273,13 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
   const handleAnswer = (selectedText: string) => {
     if (!activeQuestion) return;
 
+    const mode = settings.evaluationMode || 'flexible';
     const isCorrect =
       selectedText.trim().toLowerCase() === activeQuestion.correctOptionText.trim().toLowerCase() ||
-      (activeQuestion.card.pinyin &&
-        selectedText.trim().toLowerCase() === activeQuestion.card.pinyin.trim().toLowerCase()) ||
-      selectedText.trim().toLowerCase() === activeQuestion.card.term.trim().toLowerCase() ||
-      selectedText.trim().toLowerCase() === activeQuestion.card.definition.trim().toLowerCase();
+      evaluateAnswer(selectedText, activeQuestion.correctOptionText, mode, activeQuestion.card) ||
+      evaluateAnswer(selectedText, activeQuestion.card.term, mode, activeQuestion.card) ||
+      (activeQuestion.card.pinyin ? evaluateAnswer(selectedText, activeQuestion.card.pinyin, mode, activeQuestion.card) : false) ||
+      evaluateAnswer(selectedText, activeQuestion.card.definition, mode, activeQuestion.card);
 
     if (isCorrect) {
       recordCardReview(activeQuestion.card.id, true);
@@ -591,6 +595,27 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* Action buttons: Tôi ko biết & Tôi đã trả lời đúng */}
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleAnswer('Tôi không biết')}
+                  className="flex-1 py-2.5 px-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <XCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>Tôi ko biết</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAnswer(activeQuestion?.correctOptionText || activeQuestion?.card.term || '')}
+                  className="flex-1 py-2.5 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/80 hover:border-emerald-600 text-emerald-300 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Tôi đã trả lời đúng</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

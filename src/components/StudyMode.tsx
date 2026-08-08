@@ -34,6 +34,7 @@ import { saveCardProgress, getProgress } from '../utils/storage';
 import { recordStudyActivity, getCardMasteryMap } from '../utils/srs';
 import { STORAGE_KEYS } from '../constants';
 import { HanziWriterModal } from './HanziWriterModal';
+import { evaluateAnswer, EvaluationMode } from '../utils/answerChecker';
 
 type MainStudyMode = 'learn' | 'flashcard';
 
@@ -117,6 +118,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
   });
 
   const [answerInputMode, setAnswerInputMode] = useState<AnswerInputMode>('multiple_choice');
+  const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('flexible');
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
   // Load saved settings from localStorage on mount
@@ -130,6 +132,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         if (parsed.questionFields) setQuestionFields(parsed.questionFields);
         if (parsed.answerFields) setAnswerFields(parsed.answerFields);
         if (parsed.answerInputMode) setAnswerInputMode(parsed.answerInputMode);
+        if (parsed.evaluationMode) setEvaluationMode(parsed.evaluationMode);
         if (typeof parsed.autoSpeak === 'boolean') setAutoSpeak(parsed.autoSpeak);
         if (typeof parsed.isSrsEnabled === 'boolean') setIsSrsEnabled(parsed.isSrsEnabled);
       }
@@ -146,7 +149,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     aFields: Record<AnswerField, boolean>,
     ansMode: AnswerInputMode,
     speak: boolean,
-    srs: boolean
+    srs: boolean,
+    evalMode: EvaluationMode = evaluationMode
   ) => {
     try {
       const payload = {
@@ -155,6 +159,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         questionFields: qFields,
         answerFields: aFields,
         answerInputMode: ansMode,
+        evaluationMode: evalMode,
         autoSpeak: speak,
         isSrsEnabled: srs,
       };
@@ -522,8 +527,12 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
     const correctVal = getTargetAnswerValue(currentLearnCard, currentAnswerField);
 
-    const normalize = (str: string) => str.trim().toLowerCase().replace(/\s+/g, ' ');
-    const isRight = normalize(submittedVal) === normalize(correctVal);
+    const isRight = evaluateAnswer(submittedVal, correctVal, evaluationMode, {
+      term: currentLearnCard.term,
+      pinyin: currentLearnCard.pinyin,
+      definition: currentLearnCard.definition,
+      synonyms: currentLearnCard.synonyms,
+    });
     setIsCorrectAnswer(isRight);
 
     const currentCardState = cardMastery[currentLearnCard.id] || { level: 0, correctInRow: 0 };
@@ -547,6 +556,55 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     }
 
     setCardMastery(updatedMastery);
+    try {
+      localStorage.setItem('chinese_flashcard_mastery', JSON.stringify(updatedMastery));
+      window.dispatchEvent(new CustomEvent('srs-updated', { detail: { cardId: currentLearnCard.id } }));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleIDontKnow = () => {
+    if (!currentLearnCard) return;
+    setIsAnswerSubmitted(true);
+    setIsCorrectAnswer(false);
+    setSelectedOption('Tôi không biết');
+
+    const updatedMastery = {
+      ...cardMastery,
+      [currentLearnCard.id]: {
+        level: 0,
+        correctInRow: 0,
+        lastReviewedAt: Date.now(),
+      },
+    };
+    setCardMastery(updatedMastery);
+    saveCardProgress(currentLearnCard.id, 'unlearned');
+    try {
+      localStorage.setItem('chinese_flashcard_mastery', JSON.stringify(updatedMastery));
+      window.dispatchEvent(new CustomEvent('srs-updated', { detail: { cardId: currentLearnCard.id } }));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleIWasRight = () => {
+    if (!currentLearnCard) return;
+    setIsAnswerSubmitted(true);
+    setIsCorrectAnswer(true);
+
+    const currentCardState = cardMastery[currentLearnCard.id] || { level: 0, correctInRow: 0 };
+    const newLevel = Math.min(2, currentCardState.level + 1);
+    const updatedMastery = {
+      ...cardMastery,
+      [currentLearnCard.id]: {
+        level: newLevel,
+        correctInRow: currentCardState.correctInRow + 1,
+        lastReviewedAt: Date.now(),
+      },
+    };
+    setCardMastery(updatedMastery);
+    saveCardProgress(currentLearnCard.id, newLevel === 2 ? 'mastered' : 'learning');
     try {
       localStorage.setItem('chinese_flashcard_mastery', JSON.stringify(updatedMastery));
       window.dispatchEvent(new CustomEvent('srs-updated', { detail: { cardId: currentLearnCard.id } }));
@@ -1013,6 +1071,28 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </form>
                 )}
 
+                {/* Quick Action Buttons: Tôi không biết & Tôi đã trả lời đúng */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleIDontKnow}
+                    disabled={isAnswerSubmitted}
+                    className="flex-1 py-2 px-3 bg-slate-900/80 hover:bg-slate-800 disabled:opacity-50 border border-slate-700/80 hover:border-slate-600 text-slate-300 font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <XCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>Tôi ko biết</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleIWasRight}
+                    className="flex-1 py-2 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/80 hover:border-emerald-600 text-emerald-300 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Tôi đã trả lời đúng</span>
+                  </button>
+                </div>
+
                 {/* FEEDBACK & NEXT BUTTON */}
                 {isAnswerSubmitted && (
                   <motion.div
@@ -1448,6 +1528,44 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       }`}
                     >
                       Chọn cả 2 (Xáo trộn)
+                    </button>
+                  </div>
+                </div>
+
+                {/* TÙY CHỌN TRẢ LỜI / ĐÁNH GIÁ ĐÁP ÁN */}
+                <div className="space-y-1.5 pt-3 border-t border-slate-800">
+                  <span className="text-slate-200 font-semibold block text-xs">Chế độ kiểm tra đáp án:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEvaluationMode('flexible');
+                        saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, 'flexible');
+                      }}
+                      className={`p-2.5 rounded-xl text-left border cursor-pointer transition-colors ${
+                        evaluationMode === 'flexible'
+                          ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-semibold'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="font-bold text-xs text-white">Không cần chặt chẽ (Linh hoạt)</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Bỏ qua dấu câu/khoảng trắng, đúng 1 từ chính vẫn tính đúng</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEvaluationMode('strict');
+                        saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, 'strict');
+                      }}
+                      className={`p-2.5 rounded-xl text-left border cursor-pointer transition-colors ${
+                        evaluationMode === 'strict'
+                          ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-semibold'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="font-bold text-xs text-white">Trả lời chặt chẽ</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Yêu cầu khớp chính xác từng ký tự</div>
                     </button>
                   </div>
                 </div>

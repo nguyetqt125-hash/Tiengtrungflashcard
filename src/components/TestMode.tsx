@@ -29,6 +29,7 @@ import { speakChinese } from '../utils/speech';
 import { saveTestResult } from '../utils/storage';
 import { recordCardReview } from '../utils/srs';
 import { HanziWriterModal } from './HanziWriterModal';
+import { evaluateAnswer, EvaluationMode } from '../utils/answerChecker';
 import { PenTool } from 'lucide-react';
 
 interface TestModeProps {
@@ -43,6 +44,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
 
   // Test Settings State
+  const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('flexible');
   const [settings, setSettings] = useState<TestSettings>({
     questionTypes: ['term', 'pinyin', 'definition'],
     formatTypes: ['mcq', 'typing'],
@@ -208,14 +210,31 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
     }
   };
 
-  // Normalize string comparison for strict matching without AI
-  const normalize = (str: string) =>
-    str
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
-      .trim();
+  const handleIDontKnow = () => {
+    if (!currentQ) return;
+    const ans = 'Tôi không biết';
+    setUserAnswers((prev) => ({ ...prev, [currentQ.id]: ans }));
+
+    if (currentQIndex < questions.length - 1) {
+      setCurrentQIndex(currentQIndex + 1);
+      setTypedAnswer('');
+    } else {
+      finishTest({ ...userAnswers, [currentQ.id]: ans });
+    }
+  };
+
+  const handleIWasRight = () => {
+    if (!currentQ) return;
+    const ans = currentQ.formatType === 'tf' ? (currentQ.isTrueFalseTargetMatch ? 'ĐÚNG' : 'SAI') : currentQ.correctAnswer;
+    setUserAnswers((prev) => ({ ...prev, [currentQ.id]: ans }));
+
+    if (currentQIndex < questions.length - 1) {
+      setCurrentQIndex(currentQIndex + 1);
+      setTypedAnswer('');
+    } else {
+      finishTest({ ...userAnswers, [currentQ.id]: ans });
+    }
+  };
 
   const finishTest = (finalAnswers = userAnswers) => {
     let correctCount = 0;
@@ -228,19 +247,17 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
       if (q.formatType === 'tf') {
         const expected = q.isTrueFalseTargetMatch ? 'ĐÚNG' : 'SAI';
         isCorrect = uAns === expected;
+      } else if (uAns === 'Tôi không biết') {
+        isCorrect = false;
+      } else if (uAns === q.correctAnswer) {
+        isCorrect = true;
       } else {
-        const normUser = normalize(uAns);
-        const normCorrect = normalize(q.correctAnswer);
-        const normTerm = normalize(q.card.term);
-        const normDef = normalize(q.card.definition);
-        const normPinyin = normalize(q.card.pinyin || '');
-
-        // Match against exact correct answer or card attributes
-        isCorrect =
-          normUser === normCorrect ||
-          normUser === normTerm ||
-          normUser === normDef ||
-          (normPinyin.length > 0 && normUser === normPinyin);
+        isCorrect = evaluateAnswer(uAns, q.correctAnswer, evaluationMode, {
+          term: q.card.term,
+          pinyin: q.card.pinyin,
+          definition: q.card.definition,
+          synonyms: q.card.synonyms,
+        });
       }
 
       if (isCorrect) correctCount++;
@@ -631,6 +648,27 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               </button>
             </div>
           )}
+
+          {/* Action buttons: Tôi ko biết & Tôi đã trả lời đúng */}
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleIDontKnow}
+              className="flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-slate-300 font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <XCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span>Tôi ko biết</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleIWasRight}
+              className="flex-1 py-2.5 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/80 hover:border-emerald-600 text-emerald-300 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Tôi đã trả lời đúng</span>
+            </button>
+          </div>
         </div>
 
         {/* QUICK SETTINGS MODAL */}
@@ -652,6 +690,37 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               </div>
 
               <div className="space-y-3 text-xs">
+                <div className="space-y-1.5">
+                  <span className="font-semibold text-slate-200 block">Chế độ kiểm tra đáp án</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEvaluationMode('flexible')}
+                      className={`p-2 rounded-xl text-left border cursor-pointer ${
+                        evaluationMode === 'flexible'
+                          ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-bold'
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="text-xs text-white">Linh hoạt</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Bỏ qua dấu câu, 1 từ đúng vẫn tính đúng</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setEvaluationMode('strict')}
+                      className={`p-2 rounded-xl text-left border cursor-pointer ${
+                        evaluationMode === 'strict'
+                          ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-bold'
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="text-xs text-white">Chặt chẽ</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Khớp chính xác từng ký tự</div>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between bg-slate-800/60 p-3 rounded-xl border border-slate-700">
                   <span className="font-semibold text-slate-200">Hiển thị gợi ý mẹo nhớ</span>
                   <input

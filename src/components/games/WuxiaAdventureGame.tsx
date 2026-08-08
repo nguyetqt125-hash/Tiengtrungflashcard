@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Crown, Volume2, Trophy, Milestone, Sparkles, Scroll, Heart, HeartOff, Swords, Flame, Send } from 'lucide-react';
+import { Shield, Crown, Volume2, Trophy, Milestone, Sparkles, Scroll, Heart, HeartOff, Swords, Flame, Send, XCircle, CheckCircle } from 'lucide-react';
 import { Flashcard } from '../../types';
 import { speakChinese } from '../../utils/speech';
 import { recordCardReview } from '../../utils/srs';
 import { GameCustomSettings, QuestionField } from './GameSettingsModal';
 import { WrongAnswerModal } from './WrongAnswerModal';
+import { evaluateAnswer } from '../../utils/answerChecker';
 
 interface WuxiaAdventureGameProps {
   cards: Flashcard[];
@@ -138,23 +139,26 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
   };
 
   const checkTypedAnswer = (input: string, card: Flashcard): boolean => {
-    const cleanInput = input.trim().toLowerCase();
-    if (!cleanInput) return false;
+    if (!input.trim()) return false;
+    const mode = settings.evaluationMode || 'flexible';
 
-    const cleanTerm = card.term.trim().toLowerCase();
-    if (cleanInput === cleanTerm) return true;
+    return (
+      evaluateAnswer(input, card.term, mode, card) ||
+      (card.pinyin ? evaluateAnswer(input, card.pinyin, mode, card) : false) ||
+      evaluateAnswer(input, card.definition, mode, card)
+    );
+  };
 
-    if (card.pinyin) {
-      const cleanPinyin = card.pinyin.trim().toLowerCase();
-      const asciiPinyin = cleanPinyin.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
-      const asciiInput = cleanInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
-      if (cleanInput === cleanPinyin || asciiInput === asciiPinyin) return true;
-    }
+  const handleIDontKnow = () => {
+    if (!activeQuestion) return;
+    recordCardReview(activeQuestion.card.id, false);
+    handleWrongAnswer('Tôi không biết');
+  };
 
-    const cleanDef = card.definition.trim().toLowerCase();
-    if (cleanInput === cleanDef) return true;
-
-    return false;
+  const handleIWasRight = () => {
+    if (!activeQuestion) return;
+    recordCardReview(activeQuestion.card.id, true);
+    handleCorrectAnswer();
   };
 
   const handleCorrectAnswer = () => {
@@ -396,6 +400,27 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
             ))}
           </div>
         )}
+
+        {/* Action buttons: Tôi ko biết & Tôi đã trả lời đúng */}
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <button
+            type="button"
+            onClick={handleIDontKnow}
+            className="flex-1 py-2.5 px-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-slate-300 font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <XCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>Tôi ko biết</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleIWasRight}
+            className="flex-1 py-2.5 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/80 hover:border-emerald-600 text-emerald-300 font-semibold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Tôi đã trả lời đúng</span>
+          </button>
+        </div>
       </div>
 
       {/* Wrong Answer Explanation Popup Modal */}

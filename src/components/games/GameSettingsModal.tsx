@@ -8,6 +8,7 @@ export interface GameCustomSettings {
   questionTypes: QuestionField[]; // Checkboxes for prompt types
   answerTypes: QuestionField[];   // Checkboxes for option types
   answerMode?: 'choice' | 'typing' | 'both'; // 'choice' (multiple choice), 'typing' (keyboard input), or 'both' (random per question)
+  evaluationMode?: 'strict' | 'flexible'; // Answer evaluation mode
   soundEnabled: boolean;
   timeLimitSeconds?: number;
   showSentenceTranslation?: boolean;
@@ -142,6 +143,40 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               >
                 <div className="font-bold text-xs text-white">Chọn cả 2 (Ngẫu nhiên)</div>
                 <div className="text-[11px] text-slate-400 mt-0.5">Xáo trộn câu trắc nghiệm & tự gõ</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Answer Evaluation Mode */}
+          <div className="space-y-2">
+            <label className="font-semibold text-slate-200 block text-xs">
+              Chế độ kiểm tra đáp án
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLocalSettings({ ...localSettings, evaluationMode: 'flexible' })}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  (localSettings.evaluationMode || 'flexible') === 'flexible'
+                    ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-semibold'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800/60'
+                }`}
+              >
+                <div className="font-bold text-xs text-white">Linh hoạt (Không cần chặt chẽ)</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Bỏ qua dấu câu, 1 từ đúng vẫn tính đúng</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalSettings({ ...localSettings, evaluationMode: 'strict' })}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  localSettings.evaluationMode === 'strict'
+                    ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-semibold'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800/60'
+                }`}
+              >
+                <div className="font-bold text-xs text-white">Trả lời chặt chẽ</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Khớp chính xác từng ký tự</div>
               </button>
             </div>
           </div>
