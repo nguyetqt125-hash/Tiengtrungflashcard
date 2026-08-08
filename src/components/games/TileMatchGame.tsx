@@ -180,7 +180,7 @@ export const TileMatchGame: React.FC<TileMatchGameProps> = ({
           >
             <span
               className={`font-bold ${
-                tile.type === 'term' ? 'text-lg font-chinese text-amber-300' : 'text-xs font-vietnamese text-white'
+                tile.type === 'term' ? 'text-xl sm:text-2xl font-black font-chinese text-amber-300' : 'text-xs sm:text-sm font-bold font-vietnamese text-white'
               }`}
             >
               {tile.text}

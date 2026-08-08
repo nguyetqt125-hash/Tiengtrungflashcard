@@ -361,7 +361,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
                 value={typedInput}
                 onChange={(e) => setTypedInput(e.target.value)}
                 placeholder="Gõ Chữ Hán, Pinyin hoặc Tiếng Việt để vượt ải..."
-                className="w-full py-4 px-5 pr-14 bg-slate-900/95 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-amber-500/20 placeholder:text-slate-500 placeholder:text-xs font-serif"
+                className="w-full py-4 px-5 pr-14 bg-slate-900/95 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-lg sm:text-2xl font-chinese rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-amber-500/20 placeholder:text-slate-500 placeholder:text-xs"
               />
               <button
                 type="submit"
@@ -383,15 +383,15 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
                 key={i}
                 type="button"
                 onClick={() => handleOptionClick(opt)}
-                className="p-3.5 bg-slate-900/90 hover:bg-amber-950/80 border-2 border-amber-800/60 hover:border-amber-400 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between text-left group cursor-pointer active:scale-98"
+                className="p-3.5 bg-slate-900/90 hover:bg-amber-950/80 border-2 border-amber-800/60 hover:border-amber-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl transition-all flex items-center justify-between text-left group cursor-pointer active:scale-98"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 bg-amber-600/20 text-amber-300 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-extrabold text-xs flex items-center justify-center transition-colors border border-amber-500/40">
+                  <span className="w-8 h-8 bg-amber-600/20 text-amber-300 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-extrabold text-xs flex items-center justify-center transition-colors border border-amber-500/40 shrink-0">
                     {String.fromCharCode(65 + i)}
                   </span>
-                  <span className="group-hover:text-amber-200 transition-colors font-chinese">{opt}</span>
+                  <span className="group-hover:text-amber-200 transition-colors font-chinese text-lg sm:text-xl font-bold">{opt}</span>
                 </div>
-                <Shield className="w-4 h-4 text-amber-600/60 group-hover:text-amber-400 transition-colors" />
+                <Shield className="w-4 h-4 text-amber-600/60 group-hover:text-amber-400 transition-colors shrink-0" />
               </button>
             ))}
           </div>

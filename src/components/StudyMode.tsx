@@ -974,8 +974,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                           key={idx}
                           onClick={() => handleSelectOption(opt)}
                           disabled={isAnswerSubmitted}
-                          className={`p-4 rounded-2xl border text-left text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-between gap-2 shadow-xs ${
-                            currentAnswerField === 'term' ? 'font-chinese text-base' : ''
+                          className={`p-4 rounded-2xl border text-left font-bold transition-all duration-200 cursor-pointer flex items-center justify-between gap-2 shadow-xs ${
+                            currentAnswerField === 'term' ? 'font-chinese text-xl sm:text-2xl' : 'text-base sm:text-lg'
                           } ${btnStyle}`}
                         >
                           <span className="leading-snug">{opt}</span>
@@ -996,8 +996,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                         onChange={(e) => setTypedAnswer(e.target.value)}
                         disabled={isAnswerSubmitted}
                         placeholder={`Gõ ${getFieldLabel(currentAnswerField)}...`}
-                        className={`w-full p-4 bg-slate-950 border border-slate-700 rounded-2xl text-white font-bold text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none ${
-                          currentAnswerField === 'term' ? 'font-chinese text-lg' : ''
+                        className={`w-full p-4 bg-slate-950 border border-slate-700 rounded-2xl text-white font-bold text-base sm:text-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none ${
+                          currentAnswerField === 'term' ? 'font-chinese text-2xl sm:text-3xl' : ''
                         }`}
                       />
                       {!isAnswerSubmitted && (
@@ -1038,19 +1038,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       )}
                     </div>
 
-                    <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-200">
+                    <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 text-sm space-y-2 text-slate-200">
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-2xl text-amber-200 font-chinese">{currentLearnCard.term}</span>
+                        <span className="font-bold text-3xl sm:text-4xl text-amber-300 font-chinese">{currentLearnCard.term}</span>
                         {currentLearnCard.pinyin && (
-                          <span className="font-mono text-amber-400 font-bold">[{currentLearnCard.pinyin}]</span>
+                          <span className="font-mono text-amber-400 font-bold text-base sm:text-lg">[{currentLearnCard.pinyin}]</span>
                         )}
                       </div>
-                      <p>
+                      <p className="text-sm sm:text-base">
                         <strong className="text-emerald-400">Nghĩa Tiếng Việt:</strong> {currentLearnCard.definition}
                       </p>
                       {currentLearnCard.example && (
                         <div className="flex items-start justify-between gap-2 pt-1 border-t border-slate-800/80">
-                          <p className="text-[12px] text-slate-300 leading-relaxed flex-1 font-chinese">
+                          <p className="text-sm sm:text-base text-slate-200 leading-relaxed flex-1 font-chinese">
                             <strong className="text-cyan-400">Ví dụ:</strong> {currentLearnCard.example}
                           </p>
                           <button

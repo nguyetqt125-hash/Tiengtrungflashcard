@@ -252,7 +252,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
                 value={typedInput}
                 onChange={(e) => setTypedInput(e.target.value)}
                 placeholder="Nhập Chữ Hán, Pinyin hoặc Tiếng Việt..."
-                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-amber-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm font-serif"
+                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-lg sm:text-2xl font-chinese rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-amber-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm"
               />
               <button
                 type="submit"
@@ -274,12 +274,12 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
                 key={i}
                 type="button"
                 onClick={() => handleOptionClick(opt)}
-                className="p-4 bg-slate-900 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg transition-all flex items-center gap-3 cursor-pointer group active:scale-98"
+                className="p-4 bg-slate-900 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg transition-all flex items-center gap-3 cursor-pointer group active:scale-98"
               >
-                <span className="w-7 h-7 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center transition-colors">
+                <span className="w-8 h-8 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center transition-colors shrink-0">
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span className="font-chinese">{opt}</span>
+                <span className="font-chinese text-lg sm:text-xl font-bold">{opt}</span>
               </button>
             ))}
           </div>

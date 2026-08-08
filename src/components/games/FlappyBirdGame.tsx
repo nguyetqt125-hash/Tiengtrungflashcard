@@ -564,7 +564,7 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
                       value={typedInput}
                       onChange={(e) => setTypedInput(e.target.value)}
                       placeholder="Nhập Chữ Hán, Pinyin hoặc Tiếng Việt..."
-                      className="w-full py-3.5 px-4 pr-12 bg-slate-950 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-sm rounded-xl outline-none focus:ring-4 focus:ring-amber-500/20 font-vietnamese"
+                      className="w-full py-3.5 px-4 pr-12 bg-slate-950 border-2 border-amber-500/60 focus:border-amber-400 text-white font-bold text-base sm:text-xl rounded-xl outline-none focus:ring-4 focus:ring-amber-500/20 font-chinese"
                     />
                     <button
                       type="submit"
@@ -581,12 +581,12 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
                       key={i}
                       type="button"
                       onClick={() => handleAnswer(opt)}
-                      className="p-3.5 bg-slate-950 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-xs sm:text-sm rounded-2xl transition-all flex items-center gap-2.5 text-left cursor-pointer active:scale-98 group font-vietnamese"
+                      className="p-3.5 bg-slate-950 hover:bg-slate-800 border-2 border-slate-800 hover:border-amber-400 text-white font-bold text-sm sm:text-base rounded-2xl transition-all flex items-center gap-2.5 text-left cursor-pointer active:scale-98 group"
                     >
-                      <span className="w-6 h-6 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-lg font-bold text-[11px] flex items-center justify-center shrink-0">
+                      <span className="w-7 h-7 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-lg font-bold text-xs flex items-center justify-center shrink-0">
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className="line-clamp-2 font-chinese">{opt}</span>
+                      <span className="line-clamp-2 font-chinese text-base sm:text-lg font-bold">{opt}</span>
                     </button>
                   ))}
                 </div>

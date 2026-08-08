@@ -575,12 +575,12 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                 <button
                   key={i}
                   onClick={() => handleSelectOption(opt)}
-                  className="p-4 bg-slate-900 hover:bg-indigo-900/60 border border-slate-800 hover:border-indigo-500 rounded-2xl text-sm font-semibold text-slate-100 transition-all text-left flex items-center gap-3 cursor-pointer"
+                  className="p-4 bg-slate-900 hover:bg-indigo-900/60 border border-slate-800 hover:border-indigo-500 rounded-2xl text-base sm:text-lg font-bold text-slate-100 transition-all text-left flex items-center gap-3 cursor-pointer"
                 >
-                  <span className="w-7 h-7 rounded-xl bg-slate-800 text-indigo-400 font-bold flex items-center justify-center text-xs border border-slate-700">
+                  <span className="w-8 h-8 rounded-xl bg-slate-800 text-indigo-400 font-bold flex items-center justify-center text-xs border border-slate-700 shrink-0">
                     {String.fromCharCode(65 + i)}
                   </span>
-                  <span className="font-chinese">{opt}</span>
+                  <span className="font-chinese leading-normal">{opt}</span>
                 </button>
               ))}
             </div>
@@ -590,7 +590,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
             <div className="space-y-4 text-center">
               <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
                 <p className="text-xs text-slate-400 mb-1">Cặp từ ghép:</p>
-                <p className="text-lg font-bold text-white">
+                <p className="text-xl sm:text-2xl font-bold font-chinese text-white">
                   "{currentQ.promptText}" = "{currentQ.tfDisplayedAnswer}"
                 </p>
               </div>
@@ -620,7 +620,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                 onChange={(e) => setTypedAnswer(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleNextTyped()}
                 placeholder="Nhập câu trả lời của bạn..."
-                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-2xl text-base text-white focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-2xl text-lg sm:text-2xl text-white font-chinese font-bold focus:ring-2 focus:ring-indigo-500"
                 autoFocus
               />
               <button
@@ -818,16 +818,16 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm pt-1">
                     <div>
                       <span className="text-slate-400">Bạn chọn: </span>
-                      <strong className={ans.isCorrect ? 'text-emerald-300' : 'text-rose-300'}>
+                      <strong className={`${ans.isCorrect ? 'text-emerald-300' : 'text-rose-300'} font-chinese text-base sm:text-lg`}>
                         {ans.userAnswer}
                       </strong>
                     </div>
                     <div>
                       <span className="text-slate-400">Đáp án chuẩn: </span>
-                      <strong className="text-emerald-300">{ans.correctAnswer}</strong>
+                      <strong className="text-emerald-300 font-chinese text-base sm:text-lg">{ans.correctAnswer}</strong>
                     </div>
                   </div>
                 </div>
