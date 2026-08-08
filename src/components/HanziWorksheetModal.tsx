@@ -57,7 +57,6 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
   // Grid & Paper Settings (Matching User Sample Image)
   const [gridStyle, setGridStyle] = useState<GridStyle>('tianzige');
   const [gridColor, setGridColor] = useState<GridColor>('green'); // Emerald Green as in user screenshot!
-  const [rowCount, setRowCount] = useState<number>(5); // Số dòng tập viết tự chọn
   const [practiceMode, setPracticeMode] = useState<'first_1_faint' | 'first_5_faint' | 'all_faint' | 'blank'>('first_1_faint'); // Mờ 1 dòng / Mờ 5 dòng / Mờ tất cả / Không mờ
   const [showPinyinLines, setShowPinyinLines] = useState<boolean>(true); // Top 2 dashed lines for Pinyin above grid
   const [showStrokeOrder, setShowStrokeOrder] = useState<boolean>(true);
@@ -232,13 +231,13 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
   const hexColors = getGridColorHex();
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-vietnamese">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-vietnamese print-modal-bg">
       {/* Printable CSS Rules (A4 Paper Print Format) */}
       <style>{`
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm 12mm 10mm 12mm;
+            margin: 0mm;
           }
           body {
             background: white !important;
@@ -250,25 +249,45 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
           .no-print {
             display: none !important;
           }
-          .print-container {
+          .print-modal-bg {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
-            margin: 0 !important;
+            height: auto !important;
+            background: white !important;
+            overflow: visible !important;
+          }
+          .print-canvas-area {
             padding: 0 !important;
+            background: white !important;
+            overflow: visible !important;
+          }
+          .a4-page {
+            position: relative !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-height: 297mm !important;
+            margin: 0 auto !important;
+            padding: 10mm 12mm 8mm 12mm !important;
+            box-sizing: border-box !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
             background: white !important;
             color: black !important;
             box-shadow: none !important;
-            overflow: visible !important;
+            border: none !important;
+            border-radius: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
           }
-          .print-card-block {
-            ${pagesPerChar > 0 ? 'page-break-after: always !important; break-after: page !important;' : 'page-break-inside: avoid !important; break-inside: avoid !important;'}
-            margin-bottom: 20px !important;
-          }
-          .print-page-break {
-            page-break-after: always !important;
-            break-after: page !important;
+          .a4-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           .grid-line-solid {
             border-color: ${hexColors.main} !important;
@@ -551,40 +570,6 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
               </div>
             </div>
 
-            {/* Selectable Practice Rows Count */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-300 font-bold block">Số Dòng Tập Viết (Mỗi chữ):</span>
-                <span className="text-xs font-black text-emerald-400">{rowCount} dòng</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex gap-1">
-                  {[2, 3, 5, 8, 10].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setRowCount(num)}
-                      className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                        rowCount === num
-                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md'
-                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={rowCount}
-                  onChange={(e) => setRowCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                  className="w-14 p-1.5 bg-slate-950 border border-slate-800 text-emerald-300 rounded-lg text-center text-xs font-bold focus:border-emerald-500"
-                  title="Tự nhập số dòng"
-                />
-              </div>
-            </div>
-
             {/* Practice Line Faint Style */}
             <div className="space-y-1">
               <span className="text-xs text-slate-300 font-bold block">Chế Độ Nét Mờ Dòng Tập Viết:</span>
@@ -642,196 +627,243 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
         </div>
 
         {/* Right Preview Canvas: Authentic Paper Sheet (A4 Format) */}
-        <div className="flex-1 bg-slate-950 p-4 sm:p-8 overflow-y-auto flex justify-center items-start">
-          <div className="print-container w-full max-w-[210mm] bg-white text-slate-900 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-6 min-h-[297mm]">
-            {/* Sheet Header */}
-            <div className="border-b-2 border-slate-900 pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-                  {worksheetTitle || 'VỞ TẬP VIẾT CHỮ HÁN'}
-                </h1>
-                <p className="text-xs text-slate-600 font-bold mt-1">
-                  Giấy Kẻ Ô Luyện Viết Chữ Hán A4 • 田字格 (Tianzige Worksheet)
-                </p>
-              </div>
-
-              <div className="text-xs text-slate-700 space-y-1 font-bold border-l-2 border-slate-300 pl-4">
-                <div>Họ & Tên: .....................................................</div>
-                <div>Lớp / Bài: ...... / ...... • Ngày: ...... / ...... / 20......</div>
-              </div>
+        <div className="print-canvas-area flex-1 bg-slate-950 p-4 sm:p-8 overflow-y-auto flex flex-col items-center justify-start space-y-8">
+          {isLoading && (
+            <div className="w-full max-w-[210mm] bg-white rounded-2xl p-12 text-center space-y-3 shadow-2xl my-auto">
+              <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+              <p className="text-xs font-bold text-slate-600">Đang tải dữ liệu nét chữ Hán...</p>
             </div>
+          )}
 
-            {/* Loading Indicator */}
-            {isLoading && (
-              <div className="py-12 text-center space-y-3">
-                <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
-                <p className="text-xs font-bold text-slate-600">Đang tải dữ liệu nét chữ Hán...</p>
-              </div>
-            )}
+          {!isLoading && charItems.length === 0 && (
+            <div className="w-full max-w-[210mm] bg-white rounded-2xl p-16 text-center text-slate-400 space-y-2 shadow-2xl my-auto">
+              <FileText className="w-12 h-12 text-slate-300 mx-auto" />
+              <p className="text-sm font-bold text-slate-600">Chưa chọn chữ Hán nào để tập viết</p>
+              <p className="text-xs text-slate-500">Hãy chọn Khóa học & Bài học ở bảng điều khiển bên trái.</p>
+            </div>
+          )}
 
-            {!isLoading && charItems.length === 0 && (
-              <div className="py-16 text-center text-slate-400 space-y-2">
-                <FileText className="w-12 h-12 text-slate-300 mx-auto" />
-                <p className="text-sm font-bold text-slate-600">Chưa chọn chữ Hán nào để tập viết</p>
-                <p className="text-xs text-slate-500">Hãy chọn Khóa học & Bài học ở bảng điều khiển bên trái.</p>
-              </div>
-            )}
+          {!isLoading && (() => {
+            // Build A4 Page chunks
+            interface PageBlock {
+              item: CharacterWorksheetItem;
+              charGlobalIndex: number;
+              pageIdxForChar: number;
+              totalPagesForChar: number;
+              rowCountForBlock: number;
+            }
 
-            {/* Character Items List */}
-            {!isLoading && (() => {
-              const totalPageCount = pagesPerChar > 0 ? charItems.length * pagesPerChar : charItems.length;
+            interface A4Page {
+              pageIndex: number;
+              blocks: PageBlock[];
+            }
 
-              return charItems.map((item, idx) => {
-                const totalPagesForChar = pagesPerChar > 0 ? pagesPerChar : 1;
+            const pages: A4Page[] = [];
 
-                return Array.from({ length: totalPagesForChar }).map((_, pageIdx) => {
-                  const isFirstPage = pageIdx === 0;
-                  const isLastPage = pageIdx === totalPagesForChar - 1;
-                  const globalPageIndex = pagesPerChar > 0 ? (idx * pagesPerChar + pageIdx + 1) : (idx + 1);
+            if (pagesPerChar > 0) {
+              let pageCounter = 1;
+              charItems.forEach((item, charIdx) => {
+                for (let p = 0; p < pagesPerChar; p++) {
+                  pages.push({
+                    pageIndex: pageCounter++,
+                    blocks: [
+                      {
+                        item,
+                        charGlobalIndex: charIdx + 1,
+                        pageIdxForChar: p,
+                        totalPagesForChar: pagesPerChar,
+                        rowCountForBlock: p === 0 ? 5 : 8,
+                      },
+                    ],
+                  });
+                }
+              });
+            } else {
+              const charsPerPage = 2;
+              let pageCounter = 1;
 
-                  return (
-                    <div
-                      key={`${item.char}-${idx}-page-${pageIdx}`}
-                      className={`print-card-block space-y-3 border-b border-slate-200 pb-5 last:border-none ${
-                        pagesPerChar > 0 ? 'print-page-break my-4' : ''
-                      }`}
-                    >
-                      {/* Character Title & Pinyin Info */}
-                      {isFirstPage ? (
-                        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                          <div className="flex items-center gap-3">
-                            <span className="w-7 h-7 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center">
-                              #{idx + 1}
-                            </span>
-                            <div>
+              for (let i = 0; i < charItems.length; i += charsPerPage) {
+                const chunk = charItems.slice(i, i + charsPerPage);
+                const blocks: PageBlock[] = chunk.map((item, offset) => ({
+                  item,
+                  charGlobalIndex: i + offset + 1,
+                  pageIdxForChar: 0,
+                  totalPagesForChar: 1,
+                  rowCountForBlock: 5,
+                }));
+
+                pages.push({
+                  pageIndex: pageCounter++,
+                  blocks,
+                });
+              }
+            }
+
+            const totalPageCount = pages.length;
+
+            return pages.map((page) => (
+              <div
+                key={`a4-page-${page.pageIndex}`}
+                className="a4-page w-full max-w-[210mm] w-[210mm] min-h-[297mm] h-auto sm:h-[297mm] bg-white text-slate-900 rounded-sm p-[10mm] sm:p-[12mm] shadow-2xl flex flex-col justify-between box-border overflow-hidden select-none"
+              >
+                {/* 1. Page Top Header */}
+                <div className="border-b-2 border-slate-900 pb-2 mb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
+                      {worksheetTitle || 'VỞ TẬP VIẾT CHỮ HÁN'}
+                    </h1>
+                    <p className="text-[11px] text-slate-600 font-bold mt-0.5">
+                      Giấy Kẻ Ô Luyện Viết Chữ Hán A4 • 田字格 (Tianzige Worksheet)
+                    </p>
+                  </div>
+
+                  <div className="text-[11px] text-slate-800 space-y-0.5 font-bold border-l-2 border-slate-300 pl-3">
+                    <div>Họ & Tên: .............................................................</div>
+                    <div>Lớp / Bài: ...... / ...... • Ngày: ...... / ...... / 20......</div>
+                  </div>
+                </div>
+
+                {/* 2. Character Blocks inside this A4 Page */}
+                <div className="flex-1 space-y-4 overflow-hidden my-auto">
+                  {page.blocks.map((block) => {
+                    const { item, charGlobalIndex, pageIdxForChar, totalPagesForChar, rowCountForBlock } = block;
+                    const isFirstPage = pageIdxForChar === 0;
+
+                    return (
+                      <div key={`block-${charGlobalIndex}-${pageIdxForChar}`} className="space-y-2">
+                        {/* Character Info Pill */}
+                        {isFirstPage ? (
+                          <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-6 h-6 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0">
+                                #{charGlobalIndex}
+                              </span>
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl font-black font-chinese text-slate-900">{item.char}</span>
                                 {item.pinyin && (
-                                  <span className="text-sm font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                                     [{item.pinyin}]
                                   </span>
                                 )}
+                                {item.definition && (
+                                  <span className="text-xs text-slate-600 font-medium ml-1">{item.definition}</span>
+                                )}
                               </div>
-                              {item.definition && (
-                                <p className="text-xs text-slate-600 font-medium">{item.definition}</p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {pagesPerChar > 0 && (
+                                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-300">
+                                  Trang {pageIdxForChar + 1}/{totalPagesForChar}
+                                </span>
                               )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {pagesPerChar > 0 && (
-                              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
-                                Trang 1/{pagesPerChar}
-                              </span>
-                            )}
-                            <div className="text-xs text-slate-600 font-bold bg-white px-3 py-1 rounded-lg border border-slate-200">
-                              Tổng số nét: <span className="text-emerald-700 font-black">{item.strokeCount || '?'}</span> nét
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between bg-slate-100/80 p-2 rounded-xl border border-slate-200">
-                          <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
-                            <span>Tập viết chữ:</span>
-                            <span className="text-xl font-chinese font-black text-slate-900">{item.char}</span>
-                            {item.pinyin && <span className="text-emerald-700">[{item.pinyin}]</span>}
-                          </div>
-                          <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
-                            Trang {pageIdx + 1}/{pagesPerChar}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Stroke Order Demonstration (First Page only) */}
-                      {isFirstPage && showStrokeOrder && item.strokes && item.strokes.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                            ✦ Thứ Tự Nét Viết Mẫu Từng Bước:
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {item.strokes.map((_, strokeIdx) => (
-                              <div
-                                key={strokeIdx}
-                                className="flex flex-col items-center gap-0.5 bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs"
-                              >
-                                <div className="relative w-9 h-9 border border-slate-300 rounded overflow-hidden flex items-center justify-center">
-                                  {/* Background Tianzige Grid */}
-                                  <svg className="absolute inset-0 w-full h-full text-slate-200" viewBox="0 0 1024 1024">
-                                    <line x1="512" y1="0" x2="512" y2="1024" stroke="currentColor" strokeDasharray="40 40" strokeWidth="20" />
-                                    <line x1="0" y1="512" x2="1024" y2="512" stroke="currentColor" strokeDasharray="40 40" strokeWidth="20" />
-                                  </svg>
-                                  {/* Render Strokes */}
-                                  <svg className="w-full h-full text-slate-900" viewBox="0 0 1024 1024">
-                                    <g transform="scale(1, -1) translate(0, -900)">
-                                      {item.strokes?.slice(0, strokeIdx + 1).map((pathD, pIdx) => (
-                                        <path
-                                          key={pIdx}
-                                          d={pathD}
-                                          fill={pIdx === strokeIdx ? hexColors.main : '#1e293b'}
-                                        />
-                                      ))}
-                                    </g>
-                                  </svg>
-                                </div>
-                                <span className="text-[8px] font-bold text-slate-500">Nét {strokeIdx + 1}</span>
+                              <div className="text-xs text-slate-600 font-bold bg-white px-2.5 py-0.5 rounded-lg border border-slate-200">
+                                Tổng số nét: <span className="text-emerald-700 font-black">{item.strokeCount || '?'}</span> nét
                               </div>
-                            ))}
+                            </div>
                           </div>
+                        ) : (
+                          <div className="flex items-center justify-between bg-slate-100/80 p-2 rounded-xl border border-slate-200">
+                            <div className="flex items-center gap-2 font-bold text-xs text-slate-800">
+                              <span>Tập viết chữ:</span>
+                              <span className="text-xl font-chinese font-black text-slate-900">{item.char}</span>
+                              {item.pinyin && <span className="text-emerald-700">[{item.pinyin}]</span>}
+                            </div>
+                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                              Trang {pageIdxForChar + 1}/{totalPagesForChar}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Step-by-step Stroke Order */}
+                        {isFirstPage && showStrokeOrder && item.strokes && item.strokes.length > 0 && (
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                              ✦ THỨ TỰ NẾT VIẾT MẪU TỪNG BƯỚC:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {item.strokes.map((_, strokeIdx) => (
+                                <div
+                                  key={strokeIdx}
+                                  className="flex flex-col items-center gap-0.5 bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs"
+                                >
+                                  <div className="relative w-8 h-8 border border-slate-300 rounded overflow-hidden flex items-center justify-center">
+                                    <svg className="absolute inset-0 w-full h-full text-slate-200" viewBox="0 0 1024 1024">
+                                      <line x1="512" y1="0" x2="512" y2="1024" stroke="currentColor" strokeDasharray="40 40" strokeWidth="20" />
+                                      <line x1="0" y1="512" x2="1024" y2="512" stroke="currentColor" strokeDasharray="40 40" strokeWidth="20" />
+                                    </svg>
+                                    <svg className="w-full h-full text-slate-900" viewBox="0 0 1024 1024">
+                                      <g transform="scale(1, -1) translate(0, -900)">
+                                        {item.strokes?.slice(0, strokeIdx + 1).map((pathD, pIdx) => (
+                                          <path
+                                            key={pIdx}
+                                            d={pathD}
+                                            fill={pIdx === strokeIdx ? hexColors.main : '#1e293b'}
+                                          />
+                                        ))}
+                                      </g>
+                                    </svg>
+                                  </div>
+                                  <span className="text-[8px] font-bold text-slate-500">Nét {strokeIdx + 1}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Practice Grid Rows */}
+                        <div className="space-y-1 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                            ✦ DÒNG TẬP VIẾT ({rowCountForBlock} DÒNG):
+                          </span>
+
+                          {Array.from({ length: rowCountForBlock }).map((_, rowIdx) => {
+                            let renderMode: 'faint' | 'blank' = 'blank';
+                            if (practiceMode === 'all_faint') {
+                              renderMode = 'faint';
+                            } else if (practiceMode === 'first_1_faint') {
+                              renderMode = (isFirstPage && rowIdx === 0) ? 'faint' : 'blank';
+                            } else if (practiceMode === 'first_5_faint') {
+                              renderMode = (isFirstPage && rowIdx < 5) ? 'faint' : 'blank';
+                            } else {
+                              renderMode = 'blank';
+                            }
+
+                            return (
+                              <PaperRow
+                                key={rowIdx}
+                                char={item.char}
+                                strokes={item.strokes}
+                                boxesCount={boxesPerRow}
+                                gridStyle={gridStyle}
+                                hexColors={hexColors}
+                                showPinyinLines={showPinyinLines}
+                                renderMode={renderMode}
+                                rowIndex={rowIdx}
+                              />
+                            );
+                          })}
                         </div>
-                      )}
-
-                      {/* DÒNG TẬP VIẾT (Practice Rows) */}
-                      <div className="space-y-1.5 pt-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                          ✦ Dòng Tập Viết ({pagesPerChar > 0 ? Math.max(rowCount, 8) : rowCount} Dòng):
-                        </span>
-
-                        {Array.from({ length: pagesPerChar > 0 ? Math.max(rowCount, 8) : rowCount }).map((_, rowIdx) => {
-                          let renderMode: 'faint' | 'blank' = 'blank';
-                          if (practiceMode === 'all_faint') {
-                            renderMode = 'faint';
-                          } else if (practiceMode === 'first_1_faint') {
-                            renderMode = (isFirstPage && rowIdx === 0) ? 'faint' : 'blank';
-                          } else if (practiceMode === 'first_5_faint') {
-                            renderMode = (isFirstPage && rowIdx < 5) ? 'faint' : 'blank';
-                          } else {
-                            renderMode = 'blank';
-                          }
-
-                          return (
-                            <PaperRow
-                              key={rowIdx}
-                              char={item.char}
-                              strokes={item.strokes}
-                              boxesCount={boxesPerRow}
-                              gridStyle={gridStyle}
-                              hexColors={hexColors}
-                              showPinyinLines={showPinyinLines}
-                              renderMode={renderMode}
-                              rowIndex={rowIdx}
-                            />
-                          );
-                        })}
                       </div>
+                    );
+                  })}
+                </div>
 
-                      {/* A4 Page Footer Numbering */}
-                      <div className="page-footer pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-medium select-none">
-                        <span className="truncate max-w-[60%]">
-                          {worksheetTitle || 'Vở Tập Viết Chữ Hán A4'}
-                        </span>
-                        <div className="flex items-center gap-1.5 font-bold text-slate-700 bg-slate-100/80 px-2.5 py-0.5 rounded-full border border-slate-200 shrink-0">
-                          <span>Trang</span>
-                          <span className="text-emerald-700 font-black">{globalPageIndex}</span>
-                          <span className="text-slate-400">/</span>
-                          <span>{totalPageCount}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              });
-            })()}
-          </div>
+                {/* 3. Page Bottom Footer */}
+                <div className="border-t border-slate-200 pt-2 mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium shrink-0">
+                  <span className="truncate max-w-[60%] font-semibold">
+                    {worksheetTitle || 'Vở Tập Viết: Bài Tập'}
+                  </span>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                    <span>Trang</span>
+                    <span className="text-emerald-700 font-black">{page.pageIndex}</span>
+                    <span className="text-slate-400">/</span>
+                    <span>{totalPageCount}</span>
+                  </div>
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       </div>
     </div>
