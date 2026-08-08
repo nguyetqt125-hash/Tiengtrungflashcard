@@ -217,7 +217,9 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
             Đề bài câu hỏi:
           </span>
           <div className="flex items-center justify-center gap-2">
-            <h3 className="text-3xl font-black text-white font-serif">{activeQuestion?.promptText}</h3>
+            <h3 className={`text-3xl font-black text-white ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
+              {activeQuestion?.promptText}
+            </h3>
             <button
               onClick={() => speakChinese(activeQuestion?.card.term || '')}
               className="p-2 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl transition-colors cursor-pointer"

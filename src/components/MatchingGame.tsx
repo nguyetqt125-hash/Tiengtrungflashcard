@@ -9,7 +9,7 @@ import {
   Sparkles,
   Settings,
   Swords,
-  Castle,
+  Feather,
   Crown,
   BookOpen,
   Grid,
@@ -19,7 +19,7 @@ import confetti from 'canvas-confetti';
 import { Flashcard, Lesson } from '../types';
 import { GameSettingsModal, GameCustomSettings } from './games/GameSettingsModal';
 import { HanziSlashGame } from './games/HanziSlashGame';
-import { TowerClimbGame } from './games/TowerClimbGame';
+import { FlappyBirdGame } from './games/FlappyBirdGame';
 import { WuxiaAdventureGame } from './games/WuxiaAdventureGame';
 import { SentenceFillGame } from './games/SentenceFillGame';
 import { TileMatchGame } from './games/TileMatchGame';
@@ -121,7 +121,7 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
       case 'hanzi_slash':
         return 'Chém Chữ Hán';
       case 'tower_climb':
-        return 'Tháp Chữ Hán';
+        return 'Chim Bay Nhận Quà (Flappy Bird)';
       case 'wuxia_adventure':
         return 'Vượt Ải Cổ Trang';
       case 'sentence_fill':
@@ -210,12 +210,12 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
               </button>
             </div>
 
-            {/* Game 2: Tháp Chữ Hán */}
+            {/* Game 2: Chim Bay Nhận Quà (Flappy Bird) */}
             <div className="bg-slate-900 border border-slate-800 hover:border-amber-500/60 rounded-3xl p-6 shadow-xl transition-all flex flex-col justify-between group">
-              <div className="space-y-4">
+              <div className="space-y-4 font-vietnamese">
                 <div className="flex items-start justify-between">
                   <div className="p-3 bg-amber-600/20 text-amber-400 rounded-2xl border border-amber-500/30 group-hover:scale-110 transition-transform">
-                    <Castle className="w-6 h-6" />
+                    <Feather className="w-6 h-6 animate-pulse" />
                   </div>
                   <button
                     onClick={() => setActiveSettingsModal('tower_climb')}
@@ -228,20 +228,20 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
 
                 <div>
                   <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                    2. Tháp Chữ Hán
+                    2. Chim Bay Nhận Quà (Flappy Bird)
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Chọn đúng gạch đá từ vựng để xếp từng tầng tháp cổ cao chọc trời.
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Bấm Space/Tab hoặc chạm màn hình để giữ chim vỗ cánh bay lượn và trả lời các Hộp Quà Từ Vựng.
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={() => startGame('tower_climb')}
-                className="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-slate-950 text-xs font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                className="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:opacity-90 text-slate-950 text-xs font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 font-vietnamese"
               >
-                <Castle className="w-4 h-4" />
-                <span>Bắt Đầu Xây Tháp</span>
+                <Feather className="w-4 h-4" />
+                <span>Bắt Đầu Bay Nhận Quà</span>
               </button>
             </div>
 
@@ -480,7 +480,7 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
             )}
 
             {activeGame === 'tower_climb' && (
-              <TowerClimbGame
+              <FlappyBirdGame
                 cards={cards}
                 settings={gameSettings.tower_climb}
                 onFinish={handleGameFinish}

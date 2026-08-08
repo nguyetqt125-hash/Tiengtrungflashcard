@@ -222,12 +222,12 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
             </button>
           </div>
 
-          <h3 className="text-xl sm:text-2xl font-black text-amber-200 font-serif leading-relaxed tracking-wide">
+          <h3 className="text-xl sm:text-2xl font-black text-amber-200 font-vietnamese leading-relaxed tracking-wide">
             {activeQuestion?.sentenceWithBlank}
           </h3>
 
           {activeQuestion?.translation && settings.showHint !== false && settings.showSentenceTranslation !== false && (
-            <p className="text-xs text-slate-400 mt-4 italic bg-slate-950 p-3 rounded-2xl border border-slate-800">
+            <p className="text-xs text-slate-300 font-vietnamese mt-4 italic bg-slate-950 p-3 rounded-2xl border border-slate-800">
               💡 {activeQuestion.translation}
             </p>
           )}
@@ -243,7 +243,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
                 value={typedInput}
                 onChange={(e) => setTypedInput(e.target.value)}
                 placeholder="Gõ Chữ Hán, Pinyin hoặc Nghĩa Tiếng Việt..."
-                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-indigo-500/60 focus:border-indigo-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-indigo-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm font-serif"
+                className="w-full py-4 px-5 pr-14 bg-slate-900 border-2 border-indigo-500/60 focus:border-indigo-400 text-white font-bold text-base sm:text-lg rounded-2xl shadow-xl outline-none focus:ring-4 focus:ring-indigo-500/20 placeholder:text-slate-500 placeholder:text-xs sm:placeholder:text-sm font-vietnamese"
               />
               <button
                 type="submit"
@@ -253,7 +253,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-400 px-2">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 px-2 font-vietnamese">
               <span>⌨️ Nhấn <strong>Enter</strong> để kiểm tra kết quả</span>
               <span>Hỗ trợ nhập: Hán tự, Pinyin hoặc Tiếng Việt</span>
             </div>
@@ -265,7 +265,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
                 key={i}
                 type="button"
                 onClick={() => handleOptionClick(opt)}
-                className="p-4 bg-slate-900 hover:bg-indigo-950/80 border-2 border-slate-800 hover:border-indigo-400 text-white font-black text-lg font-serif rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
+                className="p-4 bg-slate-900 hover:bg-indigo-950/80 border-2 border-slate-800 hover:border-indigo-400 text-white font-black text-lg font-chinese rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
               >
                 <span className="text-amber-300 group-hover:scale-110 transition-transform">{opt}</span>
               </button>

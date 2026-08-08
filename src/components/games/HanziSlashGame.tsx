@@ -239,7 +239,7 @@ export const HanziSlashGame: React.FC<HanziSlashGameProps> = ({
               Chém Chữ Hán (Câu {currentIndex + 1}/{pool.length})
             </span>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-amber-300 font-serif">
+              <h2 className={`text-xl font-black text-amber-300 ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
                 {activeQuestion?.promptText}
               </h2>
               <button

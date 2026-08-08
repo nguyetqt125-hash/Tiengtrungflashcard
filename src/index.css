@@ -12,6 +12,9 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
+  .font-vietnamese {
+    font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
   .font-chinese {
     font-family: 'Noto Serif SC', 'STKaiti', 'Kaiti', 'KaiTi', '楷体', 'DFKai-SB', 'Noto Sans SC', serif;
   }
@@ -24,7 +27,7 @@
 }
 
 body {
-  font-family: 'Be Vietnam Pro', 'Noto Serif SC', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;

@@ -26,6 +26,8 @@ import {
   ListChecks,
   X,
   Check,
+  ArrowUpDown,
+  Filter,
 } from 'lucide-react';
 import { Course, Lesson, Flashcard } from '../types';
 import { speakChinese } from '../utils/speech';
@@ -74,6 +76,11 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
   const [srsTick, setSrsTick] = useState(0);
+
+  // Lesson List Filtering & Sorting State (VIEW 2)
+  const [lessonSearchQuery, setLessonSearchQuery] = useState('');
+  const [lessonSortMode, setLessonSortMode] = useState<'a-z' | 'z-a' | 'cards-desc' | 'cards-asc' | 'due-desc' | 'order'>('a-z');
+  const [lessonFilterTab, setLessonFilterTab] = useState<'all' | 'has_cards' | 'due_only'>('all');
 
   // Batch Select State
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -125,6 +132,53 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   const masteryMap = useMemo(() => getCardMasteryMap(), [cards, selectedLessonId, srsTick]);
 
   const courseLessons = lessons.filter((l) => l.courseId === currentCourse.id);
+
+  const filteredAndSortedCourseLessons = useMemo(() => {
+    let result = [...courseLessons];
+
+    if (lessonSearchQuery.trim()) {
+      const q = lessonSearchQuery.toLowerCase().trim();
+      result = result.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          (l.description && l.description.toLowerCase().includes(q))
+      );
+    }
+
+    if (lessonFilterTab === 'has_cards') {
+      result = result.filter((l) => cards.some((c) => c.lessonId === l.id));
+    } else if (lessonFilterTab === 'due_only') {
+      result = result.filter((l) => {
+        const stats = getLessonSrsStats(cards, l.id);
+        return stats.dueCardsCount > 0;
+      });
+    }
+
+    return result.sort((a, b) => {
+      if (lessonSortMode === 'a-z') {
+        return a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' });
+      }
+      if (lessonSortMode === 'z-a') {
+        return b.name.localeCompare(a.name, 'vi', { sensitivity: 'base' });
+      }
+      if (lessonSortMode === 'cards-desc') {
+        const countA = cards.filter((c) => c.lessonId === a.id).length;
+        const countB = cards.filter((c) => c.lessonId === b.id).length;
+        return countB - countA;
+      }
+      if (lessonSortMode === 'cards-asc') {
+        const countA = cards.filter((c) => c.lessonId === a.id).length;
+        const countB = cards.filter((c) => c.lessonId === b.id).length;
+        return countA - countB;
+      }
+      if (lessonSortMode === 'due-desc') {
+        const dueA = getLessonSrsStats(cards, a.id).dueCardsCount;
+        const dueB = getLessonSrsStats(cards, b.id).dueCardsCount;
+        return dueB - dueA;
+      }
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  }, [courseLessons, lessonSearchQuery, lessonFilterTab, lessonSortMode, cards, srsTick]);
   const selectedLesson = lessons.find((l) => l.id === selectedLessonId);
 
   // VIEW 1: DEDICATED LESSON PAGE (Quizlet Style)
@@ -724,12 +778,90 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
         </div>
       </div>
 
-      {/* Vertical Lessons List */}
+      {/* Vertical Lessons List Header & Sorting Toolbar */}
       <div className="space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-indigo-600" />
-          <span>Danh Sách Bài Học ({courseLessons.length})</span>
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-base font-bold text-slate-900">
+              Danh Sách Bài Học <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">({filteredAndSortedCourseLessons.length}/{courseLessons.length})</span>
+            </h2>
+          </div>
+
+          {/* Filter Tabs & Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Input */}
+            <div className="relative min-w-[180px] flex-1 sm:flex-initial">
+              <input
+                type="text"
+                value={lessonSearchQuery}
+                onChange={(e) => setLessonSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm bài học..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              {lessonSearchQuery && (
+                <button
+                  onClick={() => setLessonSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <select
+                value={lessonSortMode}
+                onChange={(e) => setLessonSortMode(e.target.value as typeof lessonSortMode)}
+                className="bg-transparent font-bold text-slate-700 outline-none cursor-pointer text-xs"
+              >
+                <option value="a-z">Sắp xếp: Tên (A ➔ Z)</option>
+                <option value="z-a">Sắp xếp: Tên (Z ➔ A)</option>
+                <option value="cards-desc">Sắp xếp: Từ vựng (Nhiều nhất)</option>
+                <option value="cards-asc">Sắp xếp: Từ vựng (Ít nhất)</option>
+                <option value="due-desc">Sắp xếp: Cần ôn tập nhiều nhất 🔥</option>
+                <option value="order">Sắp xếp: Mặc định</option>
+              </select>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button
+                onClick={() => setLessonFilterTab('all')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                  lessonFilterTab === 'all'
+                    ? 'bg-white text-indigo-600 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => setLessonFilterTab('has_cards')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                  lessonFilterTab === 'has_cards'
+                    ? 'bg-white text-indigo-600 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Có từ vựng
+              </button>
+              <button
+                onClick={() => setLessonFilterTab('due_only')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                  lessonFilterTab === 'due_only'
+                    ? 'bg-white text-rose-600 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🔥 Cần ôn tập
+              </button>
+            </div>
+          </div>
+        </div>
 
         {courseLessons.length === 0 ? (
           <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
@@ -743,9 +875,26 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
               + Tạo Bài Học Mới
             </button>
           </div>
+        ) : filteredAndSortedCourseLessons.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3">
+            <Filter className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="text-sm font-bold text-slate-800">Không tìm thấy bài học phù hợp</h3>
+            <p className="text-xs text-slate-500">
+              Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn các bộ lọc.
+            </p>
+            <button
+              onClick={() => {
+                setLessonSearchQuery('');
+                setLessonFilterTab('all');
+              }}
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
-            {courseLessons.map((les) => {
+            {filteredAndSortedCourseLessons.map((les) => {
               const lessonCards = cards.filter((c) => c.lessonId === les.id);
               const lesSrs = getLessonSrsStats(cards, les.id);
 

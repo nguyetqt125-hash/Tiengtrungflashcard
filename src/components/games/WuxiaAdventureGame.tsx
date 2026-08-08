@@ -233,7 +233,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
               {currentGateTitle} (Ải {currentIndex + 1}/{pool.length})
             </span>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-amber-200 font-serif">
+              <h2 className={`text-xl font-black text-amber-200 ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
                 {activeQuestion?.promptText}
               </h2>
               <button
@@ -284,7 +284,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
             <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest block">
               📜 Thử Thách Vượt Ải Chướng Ngại
             </span>
-            <span className="text-base sm:text-lg font-black text-white font-serif">
+            <span className={`text-base sm:text-lg font-black text-white ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
               "{activeQuestion?.promptText}"
             </span>
             {settings.showHint !== false && activeQuestion?.card.memoryTip && (
