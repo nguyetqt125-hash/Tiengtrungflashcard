@@ -14,10 +14,12 @@ import {
   BookOpen,
   Grid,
   Zap,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Flashcard, Lesson } from '../types';
 import { GameSettingsModal, GameCustomSettings } from './games/GameSettingsModal';
+import { ConfirmExitModal } from './ConfirmExitModal';
 import { HanziSlashGame } from './games/HanziSlashGame';
 import { FlappyBirdGame } from './games/FlappyBirdGame';
 import { WuxiaAdventureGame } from './games/WuxiaAdventureGame';
@@ -90,6 +92,34 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
   const [finalScore, setFinalScore] = useState(0);
   const [finalSeconds, setFinalSeconds] = useState(0);
 
+  // Exit Confirmation State
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [exitTarget, setExitTarget] = useState<'hub' | 'close' | null>(null);
+
+  const handleRequestExit = (target: 'hub' | 'close') => {
+    // Prompt confirmation if user is playing an active game (not completed) or leaving game hub
+    if (activeGame !== null && !isCompleted) {
+      setExitTarget(target);
+      setShowExitConfirm(true);
+    } else if (activeGame === null && target === 'close') {
+      setExitTarget('close');
+      setShowExitConfirm(true);
+    } else {
+      if (target === 'hub') setActiveGame(null);
+      else onClose();
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false);
+    if (exitTarget === 'hub') {
+      setActiveGame(null);
+    } else if (exitTarget === 'close') {
+      onClose();
+    }
+    setExitTarget(null);
+  };
+
   const startGame = (mode: GameModeType) => {
     setActiveGame(mode);
     setIsCompleted(false);
@@ -138,12 +168,12 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
   // Render Game Hub Menu when activeGame is null
   if (activeGame === null) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white overflow-y-auto font-vietnamese">
         {/* Hub Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90 sticky top-0 z-10 backdrop-blur">
           <button
-            onClick={onClose}
-            className="flex items-center gap-2 text-slate-300 hover:text-white px-3.5 py-2 rounded-2xl bg-slate-800/80 hover:bg-slate-800 transition-colors text-xs font-bold cursor-pointer"
+            onClick={() => handleRequestExit('close')}
+            className="flex items-center gap-2 text-slate-300 hover:text-white px-3.5 py-2 rounded-2xl bg-slate-800/80 hover:bg-slate-800 transition-colors text-xs font-bold cursor-pointer font-vietnamese"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Thoát Trò Chơi</span>
@@ -399,17 +429,31 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
             }}
           />
         )}
+
+        {/* Exit Confirm Modal */}
+        <ConfirmExitModal
+          isOpen={showExitConfirm}
+          title="Bạn có chắc chắn muốn thoát game?"
+          message="Tiến trình đang chơi của bạn sẽ không được lưu lại."
+          confirmText="Xác Nhận Thoát"
+          cancelText="Tiếp Tục Chơi"
+          onConfirm={handleConfirmExit}
+          onCancel={() => {
+            setShowExitConfirm(false);
+            setExitTarget(null);
+          }}
+        />
       </div>
     );
   }
 
   // Active Game Screen Header & Runner
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white overflow-y-auto font-vietnamese">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20 backdrop-blur">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90 sticky top-0 z-20 backdrop-blur font-vietnamese">
         <button
-          onClick={() => setActiveGame(null)}
+          onClick={() => handleRequestExit('hub')}
           className="flex items-center gap-2 text-slate-300 hover:text-white px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors text-xs font-bold cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -421,13 +465,23 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
           <span>{getGameTitle(activeGame)}</span>
         </span>
 
-        <button
-          onClick={() => setActiveSettingsModal(activeGame)}
-          className="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 rounded-xl border border-indigo-500/40 transition-colors cursor-pointer"
-          title="Cài đặt game này"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveSettingsModal(activeGame)}
+            className="p-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 rounded-xl border border-indigo-500/40 transition-colors cursor-pointer"
+            title="Cài đặt game này"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleRequestExit('close')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            title="Thoát trò chơi"
+          >
+            <X className="w-4 h-4" />
+            <span className="hidden sm:inline">Thoát Game</span>
+          </button>
+        </div>
       </div>
 
       {/* Main View Container */}
@@ -534,6 +588,20 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
           }}
         />
       )}
+
+      {/* Exit Confirm Modal */}
+      <ConfirmExitModal
+        isOpen={showExitConfirm}
+        title="Bạn có chắc chắn muốn thoát game?"
+        message="Tiến trình ván đấu hiện tại của bạn sẽ không được lưu lại."
+        confirmText="Xác Nhận Thoát"
+        cancelText="Tiếp Tục Chơi"
+        onConfirm={handleConfirmExit}
+        onCancel={() => {
+          setShowExitConfirm(false);
+          setExitTarget(null);
+        }}
+      />
     </div>
   );
 };
