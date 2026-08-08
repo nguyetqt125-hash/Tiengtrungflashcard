@@ -34,6 +34,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
     promptText: string;
     correctOptionText: string;
     options: string[];
+    mode?: 'choice' | 'typing';
   } | null>(null);
 
   const [wrongCardShow, setWrongCardShow] = useState<{
@@ -118,6 +119,11 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
       .map((c) => getAnswerText(c, aType))
       .sort(() => 0.5 - Math.random());
 
+    const roundMode: 'choice' | 'typing' =
+      settings.answerMode === 'both'
+        ? Math.random() < 0.5 ? 'choice' : 'typing'
+        : settings.answerMode === 'typing' ? 'typing' : 'choice';
+
     setTypedInput('');
     setHeroState('running');
 
@@ -127,6 +133,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
       promptText,
       correctOptionText,
       options: allOptions,
+      mode: roundMode,
     });
   };
 
@@ -345,7 +352,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
 
       {/* Answer Area: Typing vs Choice */}
       <div className="z-10 max-w-2xl mx-auto w-full">
-        {settings.answerMode === 'typing' ? (
+        {activeQuestion?.mode === 'typing' ? (
           <form onSubmit={handleTypingSubmit} className="space-y-2">
             <div className="relative">
               <input

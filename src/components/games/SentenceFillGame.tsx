@@ -29,6 +29,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
     translation?: string;
     correctTerm: string;
     options: string[];
+    mode?: 'choice' | 'typing';
   } | null>(null);
 
   const [typedInput, setTypedInput] = useState('');
@@ -93,6 +94,11 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
       () => 0.5 - Math.random()
     );
 
+    const roundMode: 'choice' | 'typing' =
+      settings.answerMode === 'both'
+        ? Math.random() < 0.5 ? 'choice' : 'typing'
+        : settings.answerMode === 'typing' ? 'typing' : 'choice';
+
     setTypedInput('');
     setActiveQuestion({
       card: currentCard,
@@ -100,6 +106,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
       translation,
       correctTerm: targetTerm,
       options,
+      mode: roundMode,
     });
   };
 
@@ -234,7 +241,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
         </div>
 
         {/* Input Area: Typing Form vs Multiple Choice Grid */}
-        {settings.answerMode === 'typing' ? (
+        {activeQuestion?.mode === 'typing' ? (
           <form onSubmit={handleTypingSubmit} className="space-y-3">
             <div className="relative">
               <input

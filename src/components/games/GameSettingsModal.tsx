@@ -7,7 +7,7 @@ export interface GameCustomSettings {
   questionCount: number;
   questionTypes: QuestionField[]; // Checkboxes for prompt types
   answerTypes: QuestionField[];   // Checkboxes for option types
-  answerMode?: 'choice' | 'typing'; // 'choice' (multiple choice) or 'typing' (keyboard input)
+  answerMode?: 'choice' | 'typing' | 'both'; // 'choice' (multiple choice), 'typing' (keyboard input), or 'both' (random per question)
   soundEnabled: boolean;
   timeLimitSeconds?: number;
   showSentenceTranslation?: boolean;
@@ -99,12 +99,12 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             </select>
           </div>
 
-          {/* Answer Mode (Choice vs Typing) */}
+          {/* Answer Mode (Choice vs Typing vs Both) */}
           <div className="space-y-2">
             <label className="font-semibold text-slate-200 block text-xs">
               Hình thức làm bài
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setLocalSettings({ ...localSettings, answerMode: 'choice' })}
@@ -129,6 +129,19 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               >
                 <div className="font-bold text-xs text-white">Tự gõ / Đánh máy</div>
                 <div className="text-[11px] text-slate-400 mt-0.5">Nhập trực tiếp từ bàn phím</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLocalSettings({ ...localSettings, answerMode: 'both' })}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  localSettings.answerMode === 'both'
+                    ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500 font-semibold'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800/60'
+                }`}
+              >
+                <div className="font-bold text-xs text-white">Chọn cả 2 (Ngẫu nhiên)</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Xáo trộn câu trắc nghiệm & tự gõ</div>
               </button>
             </div>
           </div>

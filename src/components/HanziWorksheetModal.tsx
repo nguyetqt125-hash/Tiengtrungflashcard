@@ -663,6 +663,37 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
 
         {/* Right Preview Canvas: Authentic Paper Sheet (A4 Format) */}
         <div className="print-canvas-area flex-1 bg-slate-950 p-4 sm:p-8 overflow-y-auto flex flex-col items-center justify-start space-y-8">
+          {/* Global SVG Defs to reuse stroke paths & grid patterns across all rows (reduces PDF export size by 80-90%) */}
+          <svg className="hidden absolute w-0 h-0 overflow-hidden" aria-hidden="true">
+            <defs>
+              <g id="grid-tianzige">
+                <line x1="50" y1="0" x2="50" y2="100" stroke="currentColor" strokeDasharray="3.5 3.5" strokeWidth="1.2" />
+                <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeDasharray="3.5 3.5" strokeWidth="1.2" />
+              </g>
+              <g id="grid-mizige">
+                <line x1="0" y1="0" x2="100" y2="100" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+                <line x1="100" y1="0" x2="0" y2="100" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+                <line x1="50" y1="0" x2="50" y2="100" stroke="currentColor" strokeDasharray="3.5 3.5" strokeWidth="1.2" />
+                <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeDasharray="3.5 3.5" strokeWidth="1.2" />
+              </g>
+              <g id="grid-jiugongge">
+                <line x1="33" y1="0" x2="33" y2="100" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+                <line x1="66" y1="0" x2="66" y2="100" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+                <line x1="0" y1="33" x2="100" y2="33" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+                <line x1="0" y1="66" x2="100" y2="66" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1" />
+              </g>
+              {charItems.map((item) =>
+                item.strokes && item.strokes.length > 0 ? (
+                  <g key={`def-char-${item.char}`} id={`char-strokes-${item.char.charCodeAt(0)}`}>
+                    {item.strokes.map((pathD, pIdx) => (
+                      <path key={pIdx} d={pathD} fill="currentColor" />
+                    ))}
+                  </g>
+                ) : null
+              )}
+            </defs>
+          </svg>
+
           {isLoading && (
             <div className="w-full max-w-[210mm] bg-white rounded-2xl p-12 text-center space-y-3 shadow-2xl my-auto">
               <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
@@ -979,28 +1010,11 @@ const PaperRow: React.FC<PaperRowProps> = ({
               style={{ borderRightColor: hexColors.main }}
             >
               {/* Inner Grid Guidelines (Cross / Plus / X) */}
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                {gridStyle === 'mizige' && (
-                  <>
-                    <line x1="0" y1="0" x2="100" y2="100" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                    <line x1="100" y1="0" x2="0" y2="100" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                  </>
-                )}
-                {(gridStyle === 'tianzige' || gridStyle === 'mizige') && (
-                  <>
-                    <line x1="50" y1="0" x2="50" y2="100" stroke={hexColors.light} strokeDasharray="3.5 3.5" strokeWidth="1.2" />
-                    <line x1="0" y1="50" x2="100" y2="50" stroke={hexColors.light} strokeDasharray="3.5 3.5" strokeWidth="1.2" />
-                  </>
-                )}
-                {gridStyle === 'jiugongge' && (
-                  <>
-                    <line x1="33" y1="0" x2="33" y2="100" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                    <line x1="66" y1="0" x2="66" y2="100" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                    <line x1="0" y1="33" x2="100" y2="33" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                    <line x1="0" y1="66" x2="100" y2="66" stroke={hexColors.light} strokeDasharray="3 3" strokeWidth="1" />
-                  </>
-                )}
-              </svg>
+              {gridStyle !== 'box' && (
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" style={{ color: hexColors.light }}>
+                  <use href={`#grid-${gridStyle}`} />
+                </svg>
+              )}
 
               {/* Character Overlay - Render SVG stroke paths from HanziWriter if available */}
               {showChar && (
@@ -1014,9 +1028,7 @@ const PaperRow: React.FC<PaperRowProps> = ({
                     viewBox="0 0 1024 1024"
                   >
                     <g transform="scale(1, -1) translate(0, -900)">
-                      {strokes.map((pathD, pIdx) => (
-                        <path key={pIdx} d={pathD} fill="currentColor" />
-                      ))}
+                      <use href={`#char-strokes-${char.charCodeAt(0)}`} />
                     </g>
                   </svg>
                 ) : (

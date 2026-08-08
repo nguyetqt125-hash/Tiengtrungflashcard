@@ -29,6 +29,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
     promptText: string;
     correctOptionText: string;
     options: string[];
+    mode?: 'choice' | 'typing';
   } | null>(null);
 
   const [typedInput, setTypedInput] = useState('');
@@ -102,6 +103,11 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
       .map((c) => getAnswerText(c, aType))
       .sort(() => 0.5 - Math.random());
 
+    const roundMode: 'choice' | 'typing' =
+      settings.answerMode === 'both'
+        ? Math.random() < 0.5 ? 'choice' : 'typing'
+        : settings.answerMode === 'typing' ? 'typing' : 'choice';
+
     setTypedInput('');
     setActiveQuestion({
       card: currentCard,
@@ -109,6 +115,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
       promptText,
       correctOptionText,
       options: allOptions,
+      mode: roundMode,
     });
   };
 
@@ -236,7 +243,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
         </div>
 
         {/* Input Options / Typing Form */}
-        {settings.answerMode === 'typing' ? (
+        {activeQuestion?.mode === 'typing' ? (
           <form onSubmit={handleTypingSubmit} className="space-y-3">
             <div className="relative">
               <input

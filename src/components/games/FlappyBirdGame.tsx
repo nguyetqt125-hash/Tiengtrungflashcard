@@ -31,6 +31,7 @@ interface QuestionRound {
   promptText: string;
   correctOptionText: string;
   options: string[];
+  mode?: 'choice' | 'typing';
 }
 
 export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
@@ -181,12 +182,18 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
 
     const options = [...distractors, correctOptionText].sort(() => 0.5 - Math.random());
 
+    const roundMode: 'choice' | 'typing' =
+      settings.answerMode === 'both'
+        ? Math.random() < 0.5 ? 'choice' : 'typing'
+        : settings.answerMode === 'typing' ? 'typing' : 'choice';
+
     setActiveQuestion({
       card,
       qType,
       promptText,
       correctOptionText,
       options,
+      mode: roundMode,
     });
     setTypedInput('');
   };
@@ -542,7 +549,7 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
               </div>
 
               {/* Multiple Choice Options vs Typing Form */}
-              {settings.answerMode === 'typing' ? (
+              {activeQuestion.mode === 'typing' ? (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
