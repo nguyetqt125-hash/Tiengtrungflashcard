@@ -119,6 +119,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
   const [answerInputMode, setAnswerInputMode] = useState<AnswerInputMode>('multiple_choice');
   const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('flexible');
+  const [enterToNext, setEnterToNext] = useState<boolean>(true);
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
   // Load saved settings from localStorage on mount
@@ -135,6 +136,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         if (parsed.evaluationMode) setEvaluationMode(parsed.evaluationMode);
         if (typeof parsed.autoSpeak === 'boolean') setAutoSpeak(parsed.autoSpeak);
         if (typeof parsed.isSrsEnabled === 'boolean') setIsSrsEnabled(parsed.isSrsEnabled);
+        if (typeof parsed.enterToNext === 'boolean') setEnterToNext(parsed.enterToNext);
       }
     } catch (e) {
       console.error('Error loading study settings:', e);
@@ -150,7 +152,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     ansMode: AnswerInputMode,
     speak: boolean,
     srs: boolean,
-    evalMode: EvaluationMode = evaluationMode
+    evalMode: EvaluationMode = evaluationMode,
+    enterNext: boolean = enterToNext
   ) => {
     try {
       const payload = {
@@ -162,6 +165,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         evaluationMode: evalMode,
         autoSpeak: speak,
         isSrsEnabled: srs,
+        enterToNext: enterNext,
       };
       localStorage.setItem(STORAGE_KEYS.STUDY_SETTINGS, JSON.stringify(payload));
     } catch (e) {
@@ -652,6 +656,37 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     }
     generateNextLearnQuestion(resetMastery);
   };
+
+  // Keyboard shortcut listener for Enter key to advance or flip
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!enterToNext) return;
+      if (e.key === 'Enter') {
+        if (mainMode === 'learn') {
+          if (isAnswerSubmitted) {
+            e.preventDefault();
+            generateNextLearnQuestion(cardMastery);
+          } else if (!isTypeInputCurrent) {
+            e.preventDefault();
+            handleIWasRight();
+          }
+        } else if (mainMode === 'flashcard') {
+          e.preventDefault();
+          if (!isFcFlipped) {
+            setIsFcFlipped(true);
+          } else {
+            setIsFcFlipped(false);
+            if (displayedCards.length > 0) {
+              setFcIndex((idx) => (idx + 1) % displayedCards.length);
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [enterToNext, mainMode, isAnswerSubmitted, isTypeInputCurrent, isFcFlipped, displayedCards, cardMastery]);
 
   const stats = useMemo(() => {
     let unlearned = 0;
@@ -1688,7 +1723,24 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={autoSpeak}
                   onChange={(e) => {
                     setAutoSpeak(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled, evaluationMode, enterToNext);
+                  }}
+                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
+                />
+              </div>
+
+              {/* TÙY CHỌN ENTER PHÍM */}
+              <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                <div>
+                  <span className="font-semibold text-slate-200 block">Nhấn Enter chuyển câu tiếp theo</span>
+                  <span className="text-[11px] text-slate-400">Dùng phím Enter để nộp bài hoặc chuyển câu tiếp</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={enterToNext}
+                  onChange={(e) => {
+                    setEnterToNext(e.target.checked);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, e.target.checked);
                   }}
                   className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
@@ -1697,7 +1749,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
             <button
               onClick={() => {
-                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode);
+                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, enterToNext);
                 setIsLearnSettingsOpen(false);
               }}
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
@@ -2035,7 +2087,24 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={autoSpeak}
                   onChange={(e) => {
                     setAutoSpeak(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled, evaluationMode, enterToNext);
+                  }}
+                  className="w-5 h-5 rounded text-indigo-600 cursor-pointer"
+                />
+              </div>
+
+              {/* TÙY CHỌN ENTER PHÍM */}
+              <div className="flex items-center justify-between bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                <div>
+                  <span className="font-bold text-white block">Nhấn Enter để lật hoặc chuyển thẻ tiếp theo</span>
+                  <span className="text-[11px] text-slate-400">Dùng phím Enter trên bàn phím lật mặt sau hoặc sang thẻ tiếp</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={enterToNext}
+                  onChange={(e) => {
+                    setEnterToNext(e.target.checked);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, e.target.checked);
                   }}
                   className="w-5 h-5 rounded text-indigo-600 cursor-pointer"
                 />
@@ -2044,7 +2113,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
             <button
               onClick={() => {
-                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode);
+                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, enterToNext);
                 setIsFlashcardSettingsOpen(false);
               }}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"

@@ -222,6 +222,21 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
     generateRound(nextIdx, pool);
   };
 
+  // Enter key press listener to advance to next question when wrong answer modal or feedback is open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (settings.enterToNext === false) return;
+      if (e.key === 'Enter') {
+        if (wrongCardShow) {
+          e.preventDefault();
+          handleWrongModalNext();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [wrongCardShow, settings?.enterToNext, currentIndex, pool]);
+
   const currentGateTitle = gateNames[currentIndex % gateNames.length];
   const currentObstacleIcon = obstacles[currentIndex % obstacles.length];
 

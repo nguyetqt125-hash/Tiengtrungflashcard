@@ -221,6 +221,23 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
     return () => clearInterval(interval);
   }, [phase, settings.timeLimitMinutes]);
 
+  // Global Enter keypress listener to advance to next question
+  useEffect(() => {
+    if (phase !== 'testing') return;
+    if (settings.enterToNext === false) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        if (document.activeElement?.tagName === 'INPUT') return;
+        e.preventDefault();
+        handleIWasRight();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phase, settings.enterToNext, currentQIndex, questions.length]);
+
   const currentQ = questions[currentQIndex];
 
   const handleSelectOption = (answer: string) => {
@@ -536,15 +553,27 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               </div>
             </div>
 
-            {/* Hint Toggle */}
-            <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
-              <span className="text-xs font-semibold text-slate-300">Hiển thị gợi ý Mẹo nhớ / Ví dụ trong lúc thi</span>
-              <input
-                type="checkbox"
-                checked={settings.showHints}
-                onChange={(e) => setSettings({ ...settings, showHints: e.target.checked })}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              />
+            {/* Hint & Enter Toggles */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                <span className="text-xs font-semibold text-slate-300">Hiển thị gợi ý Mẹo nhớ / Ví dụ trong lúc thi</span>
+                <input
+                  type="checkbox"
+                  checked={settings.showHints}
+                  onChange={(e) => setSettings({ ...settings, showHints: e.target.checked })}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+                <span className="text-xs font-semibold text-slate-300">Nhấn Enter để chuyển câu tiếp theo</span>
+                <input
+                  type="checkbox"
+                  checked={settings.enterToNext !== false}
+                  onChange={(e) => setSettings({ ...settings, enterToNext: e.target.checked })}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+              </div>
             </div>
 
             {/* Action Buttons: Save Settings & Start */}
@@ -818,6 +847,16 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                     type="checkbox"
                     checked={settings.showHints}
                     onChange={(e) => setSettings({ ...settings, showHints: e.target.checked })}
+                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                  <span className="font-semibold text-slate-200">Nhấn Enter để chuyển câu tiếp theo</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.enterToNext !== false}
+                    onChange={(e) => setSettings({ ...settings, enterToNext: e.target.checked })}
                     className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                   />
                 </div>

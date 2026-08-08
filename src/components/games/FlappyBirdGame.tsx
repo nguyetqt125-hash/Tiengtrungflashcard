@@ -214,19 +214,27 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
     }
   }, [gameState, playJumpSound]);
 
-  // Keyboard controls for Space & Tab
+  // Keyboard controls for Space & Tab & Enter
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'Tab') {
         // Prevent scrolling and default tab focus movement in game mode
         e.preventDefault();
         flapWings();
+      } else if (e.key === 'Enter' && settings?.enterToNext !== false) {
+        if (wrongCardShow) {
+          e.preventDefault();
+          handleWrongModalNext();
+        } else if (gameState === 'answering_quiz' && activeQuestion) {
+          e.preventDefault();
+          handleAnswer(activeQuestion.correctOptionText || activeQuestion.card.term || '');
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [flapWings]);
+  }, [flapWings, wrongCardShow, gameState, activeQuestion, settings?.enterToNext]);
 
   // Main Flight Physics Loop
   useEffect(() => {

@@ -45,6 +45,7 @@ export interface TestSettings {
   questionCount: number;             // e.g. 5, 10, 15, or all
   timeLimitMinutes: number;          // 0 = unlimited, or 3, 5, 10
   showHints: boolean;                // show memory tips / example hints during test
+  enterToNext?: boolean;             // Press Enter to go to next question
 }
 
 export interface TestQuestion {

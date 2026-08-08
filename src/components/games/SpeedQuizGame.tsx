@@ -210,6 +210,21 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
     generateRound(nextIdx, pool);
   };
 
+  // Enter key press listener to advance to next question when wrong answer modal or feedback is open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (settings.enterToNext === false) return;
+      if (e.key === 'Enter') {
+        if (wrongCardShow) {
+          e.preventDefault();
+          handleWrongModalNext();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [wrongCardShow, settings?.enterToNext, currentIndex, pool]);
+
   return (
     <div className="relative w-full h-[78vh] min-h-[500px] bg-slate-950 rounded-3xl border border-slate-800 p-4 flex flex-col justify-between overflow-hidden select-none">
       {/* Top Bar Header */}

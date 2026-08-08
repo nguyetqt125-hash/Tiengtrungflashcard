@@ -9,6 +9,7 @@ export interface GameCustomSettings {
   answerTypes: QuestionField[];   // Checkboxes for option types
   answerMode?: 'choice' | 'typing' | 'both'; // 'choice' (multiple choice), 'typing' (keyboard input), or 'both' (random per question)
   evaluationMode?: 'strict' | 'flexible'; // Answer evaluation mode
+  enterToNext?: boolean; // Press Enter to go to next question / submit
   soundEnabled: boolean;
   timeLimitSeconds?: number;
   showSentenceTranslation?: boolean;
@@ -292,6 +293,22 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               checked={localSettings.soundEnabled}
               onChange={(e) =>
                 setLocalSettings({ ...localSettings, soundEnabled: e.target.checked })
+              }
+              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-500"
+            />
+          </div>
+
+          {/* Enter key to next question toggle */}
+          <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+            <div>
+              <span className="font-semibold text-slate-200 block">Nhấn Enter chuyển câu tiếp theo</span>
+              <span className="text-[11px] text-slate-400">Cho phép nhấn phím Enter trên bàn phím để chuyển câu kế tiếp hoặc nộp bài</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={localSettings.enterToNext !== false}
+              onChange={(e) =>
+                setLocalSettings({ ...localSettings, enterToNext: e.target.checked })
               }
               className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-500"
             />
