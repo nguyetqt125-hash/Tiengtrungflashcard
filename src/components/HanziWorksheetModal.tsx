@@ -239,7 +239,7 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
             size: A4 portrait;
             margin: 0mm;
           }
-          html, body, #root {
+          html, body, #root, #root > div {
             height: auto !important;
             min-height: 0 !important;
             max-height: none !important;
@@ -252,6 +252,13 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
             font-family: 'Inter', 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          /* Hide all background elements/UI on the homepage when printing worksheet */
+          #root > div > *:not(.print-modal-bg) {
+            display: none !important;
+          }
+          header, nav, main, footer {
+            display: none !important;
           }
           .no-print {
             display: none !important;
