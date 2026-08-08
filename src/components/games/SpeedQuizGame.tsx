@@ -217,7 +217,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
             Đề bài câu hỏi:
           </span>
           <div className="flex items-center justify-center gap-2">
-            <h3 className={`text-3xl font-black text-white ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
+            <h3 className={`text-3xl font-black text-white ${activeQuestion?.qType === 'term' || activeQuestion?.qType === 'audio' ? 'font-chinese' : 'font-vietnamese'}`}>
               {activeQuestion?.promptText}
             </h3>
             <button
@@ -272,7 +272,7 @@ export const SpeedQuizGame: React.FC<SpeedQuizGameProps> = ({
                 <span className="w-7 h-7 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center transition-colors">
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span>{opt}</span>
+                <span className="font-chinese">{opt}</span>
               </button>
             ))}
           </div>

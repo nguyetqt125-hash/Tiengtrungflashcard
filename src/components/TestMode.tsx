@@ -506,7 +506,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
             </span>
 
             <div className="space-y-2">
-              <h2 className="text-4xl md:text-5xl font-black text-amber-200 tracking-wide">
+              <h2 className={`text-4xl md:text-5xl font-black text-amber-200 tracking-wide ${currentQ.questionType === 'term' ? 'font-chinese' : ''}`}>
                 {currentQ.promptText}
               </h2>
               <p className="text-xs text-slate-400">{currentQ.promptSubtext}</p>
@@ -550,7 +550,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                   <span className="w-7 h-7 rounded-xl bg-slate-800 text-indigo-400 font-bold flex items-center justify-center text-xs border border-slate-700">
                     {String.fromCharCode(65 + i)}
                   </span>
-                  <span>{opt}</span>
+                  <span className="font-chinese">{opt}</span>
                 </button>
               ))}
             </div>

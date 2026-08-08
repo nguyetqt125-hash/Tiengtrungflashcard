@@ -713,7 +713,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 <span>Nghe ví dụ</span>
               </button>
             </div>
-            <p className="text-xs text-slate-100 leading-relaxed font-medium">{card.example}</p>
+            <p className="text-xs text-slate-100 leading-relaxed font-medium font-chinese">{card.example}</p>
           </div>
         )}
 
@@ -721,7 +721,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         {fields.synonyms && card.synonyms && (
           <div className="bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 text-left w-full max-w-md text-xs shrink-0">
             <span className="text-slate-400 font-bold">Từ đồng nghĩa/liên quan: </span>
-            <span className="text-amber-300 font-semibold">{card.synonyms}</span>
+            <span className="text-amber-300 font-semibold font-chinese">{card.synonyms}</span>
           </div>
         )}
 
@@ -1040,7 +1040,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
                     <div className="bg-slate-950/90 p-4 rounded-xl border border-slate-800 text-xs space-y-2 text-slate-200">
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-2xl text-amber-200">{currentLearnCard.term}</span>
+                        <span className="font-bold text-2xl text-amber-200 font-chinese">{currentLearnCard.term}</span>
                         {currentLearnCard.pinyin && (
                           <span className="font-mono text-amber-400 font-bold">[{currentLearnCard.pinyin}]</span>
                         )}
@@ -1050,7 +1050,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       </p>
                       {currentLearnCard.example && (
                         <div className="flex items-start justify-between gap-2 pt-1 border-t border-slate-800/80">
-                          <p className="text-[12px] text-slate-300 leading-relaxed flex-1">
+                          <p className="text-[12px] text-slate-300 leading-relaxed flex-1 font-chinese">
                             <strong className="text-cyan-400">Ví dụ:</strong> {currentLearnCard.example}
                           </p>
                           <button

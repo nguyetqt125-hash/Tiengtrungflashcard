@@ -58,8 +58,7 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
   const [gridStyle, setGridStyle] = useState<GridStyle>('tianzige');
   const [gridColor, setGridColor] = useState<GridColor>('green'); // Emerald Green as in user screenshot!
   const [rowCount, setRowCount] = useState<number>(5); // Số dòng tập viết tự chọn
-  const [showSampleRow, setShowSampleRow] = useState<boolean>(true); // Dòng mẫu in đậm
-  const [practiceMode, setPracticeMode] = useState<'first_faint' | 'faint' | 'blank'>('first_faint'); // Mờ 1 dòng / Mờ tất cả / Trống
+  const [practiceMode, setPracticeMode] = useState<'first_1_faint' | 'first_5_faint' | 'all_faint' | 'blank'>('first_1_faint'); // Mờ 1 dòng / Mờ 5 dòng / Mờ tất cả / Không mờ
   const [showPinyinLines, setShowPinyinLines] = useState<boolean>(true); // Top 2 dashed lines for Pinyin above grid
   const [showStrokeOrder, setShowStrokeOrder] = useState<boolean>(true);
   const [pagesPerChar, setPagesPerChar] = useState<number>(0); // 0 = Liền mạch (Nhiều chữ/trang), 1 = 1 trang/chữ, 2 = 2 trang/chữ, 3 = 3 trang/chữ
@@ -591,9 +590,10 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
               <span className="text-xs text-slate-300 font-bold block">Chế Độ Nét Mờ Dòng Tập Viết:</span>
               <div className="space-y-1 text-xs font-medium">
                 {[
-                  { id: 'first_faint', label: '1. In nét mờ dòng 1 (Các dòng còn lại trống)' },
-                  { id: 'faint', label: '2. In nét mờ tất cả các dòng (In đồ)' },
-                  { id: 'blank', label: '3. Không in nét mờ (Dòng kẻ trống)' },
+                  { id: 'first_1_faint', label: '1. In nét mờ 1 dòng đầu (Các dòng sau ô trống)' },
+                  { id: 'first_5_faint', label: '2. In nét mờ 5 dòng đầu (Các dòng sau ô trống)' },
+                  { id: 'all_faint', label: '3. In nét mờ tất cả các dòng (In đồ toàn bộ)' },
+                  { id: 'blank', label: '4. Không in nét mờ (Dòng kẻ ô trống)' },
                 ].map((mode) => (
                   <label
                     key={mode.id}
@@ -618,16 +618,6 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
 
             {/* Toggles */}
             <div className="space-y-2 pt-1">
-              <label className="flex items-center justify-between text-xs text-slate-300 cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                <span>In Dòng Mẫu Chữ In Đậm (Dòng Mẫu)</span>
-                <input
-                  type="checkbox"
-                  checked={showSampleRow}
-                  onChange={(e) => setShowSampleRow(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
-                />
-              </label>
-
               <label className="flex items-center justify-between text-xs text-slate-300 cursor-pointer bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <span>Dòng Kẻ Đứt Pinyin Phía Trên Ô</span>
                 <input
@@ -787,23 +777,6 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                         </div>
                       )}
 
-                      {/* DÒNG MẪU (Sample Row) */}
-                      {showSampleRow && (
-                        <div className="space-y-1 pt-1">
-                          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">
-                            ✦ Dòng Mẫu Chữ In Đậm (Sample Row):
-                          </span>
-                          <PaperRow
-                            char={item.char}
-                            boxesCount={boxesPerRow}
-                            gridStyle={gridStyle}
-                            hexColors={hexColors}
-                            showPinyinLines={showPinyinLines}
-                            isSampleRow={true}
-                          />
-                        </div>
-                      )}
-
                       {/* DÒNG TẬP VIẾT (Practice Rows) */}
                       <div className="space-y-1.5 pt-1">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -811,11 +784,13 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                         </span>
 
                         {Array.from({ length: pagesPerChar > 0 ? Math.max(rowCount, 8) : rowCount }).map((_, rowIdx) => {
-                          let renderMode: 'faint' | 'first_faint' | 'blank' = 'blank';
-                          if (practiceMode === 'faint') {
+                          let renderMode: 'faint' | 'blank' = 'blank';
+                          if (practiceMode === 'all_faint') {
                             renderMode = 'faint';
-                          } else if (practiceMode === 'first_faint') {
-                            renderMode = (isFirstPage && rowIdx === 0) ? 'first_faint' : 'blank';
+                          } else if (practiceMode === 'first_1_faint') {
+                            renderMode = (isFirstPage && rowIdx === 0) ? 'faint' : 'blank';
+                          } else if (practiceMode === 'first_5_faint') {
+                            renderMode = (isFirstPage && rowIdx < 5) ? 'faint' : 'blank';
                           } else {
                             renderMode = 'blank';
                           }
@@ -824,11 +799,11 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                             <PaperRow
                               key={rowIdx}
                               char={item.char}
+                              strokes={item.strokes}
                               boxesCount={boxesPerRow}
                               gridStyle={gridStyle}
                               hexColors={hexColors}
                               showPinyinLines={showPinyinLines}
-                              isSampleRow={false}
                               renderMode={renderMode}
                               rowIndex={rowIdx}
                             />
@@ -849,22 +824,22 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
 /* Component rendering one continuous Chinese Paper Grid Line (exactly as user screenshot) */
 interface PaperRowProps {
   char: string;
+  strokes?: string[];
   boxesCount: number;
   gridStyle: GridStyle;
   hexColors: { main: string; light: string; faint: string };
   showPinyinLines: boolean;
-  isSampleRow: boolean;
-  renderMode?: 'faint' | 'first_faint' | 'blank';
+  renderMode?: 'faint' | 'blank';
   rowIndex?: number;
 }
 
 const PaperRow: React.FC<PaperRowProps> = ({
   char,
+  strokes,
   boxesCount = 11,
   gridStyle,
   hexColors,
   showPinyinLines,
-  isSampleRow,
   renderMode = 'blank',
   rowIndex = 0,
 }) => {
@@ -894,30 +869,26 @@ const PaperRow: React.FC<PaperRowProps> = ({
           let isBold = false;
           let isFaint = false;
 
-          if (isSampleRow) {
+          if (renderMode === 'faint') {
             showChar = true;
-            isBold = true;
-          } else {
-            if (renderMode === 'faint') {
-              showChar = true;
-              isFaint = true;
-            } else if (renderMode === 'first_faint') {
-              if (boxIdx === 0) {
-                showChar = true;
-                isBold = true; // First box of first row can be guide
-              } else {
-                showChar = true;
-                isFaint = true; // Other boxes faint
-              }
+            if (boxIdx === 0 && rowIndex === 0) {
+              isBold = true;
             } else {
-              showChar = false; // Blank
+              isFaint = true;
+            }
+          } else {
+            if (boxIdx === 0 && rowIndex === 0) {
+              showChar = true;
+              isBold = true;
+            } else {
+              showChar = false;
             }
           }
 
           return (
             <div
               key={boxIdx}
-              className="relative flex-1 aspect-square border-r last:border-r-0 flex items-center justify-center overflow-hidden bg-white"
+              className="relative flex-1 aspect-square border-r last:border-r-0 flex items-center justify-center overflow-hidden bg-white p-0.5"
               style={{ borderRightColor: hexColors.main }}
             >
               {/* Inner Grid Guidelines (Cross / Plus / X) */}
@@ -944,19 +915,34 @@ const PaperRow: React.FC<PaperRowProps> = ({
                 )}
               </svg>
 
-              {/* Character Overlay */}
+              {/* Character Overlay - Render SVG stroke paths from HanziWriter if available */}
               {showChar && (
-                <span
-                  className={`relative z-10 font-chinese text-2xl font-bold select-none ${
-                    isBold
-                      ? 'bold-sample-char text-slate-900 font-black'
-                      : isFaint
-                      ? 'faint-char text-slate-300 opacity-40 font-bold'
-                      : 'text-slate-800'
-                  }`}
-                >
-                  {char}
-                </span>
+                strokes && strokes.length > 0 ? (
+                  <svg
+                    className={`relative z-10 w-[85%] h-[85%] select-none ${
+                      isBold
+                        ? 'bold-sample-char text-slate-900 font-black'
+                        : 'faint-char text-slate-300 opacity-30'
+                    }`}
+                    viewBox="0 0 1024 1024"
+                  >
+                    <g transform="scale(1, -1) translate(0, -900)">
+                      {strokes.map((pathD, pIdx) => (
+                        <path key={pIdx} d={pathD} fill="currentColor" />
+                      ))}
+                    </g>
+                  </svg>
+                ) : (
+                  <span
+                    className={`relative z-10 font-chinese text-2xl font-bold select-none ${
+                      isBold
+                        ? 'bold-sample-char text-slate-900 font-black'
+                        : 'faint-char text-slate-300 opacity-40 font-bold'
+                    }`}
+                  >
+                    {char}
+                  </span>
+                )
               )}
             </div>
           );

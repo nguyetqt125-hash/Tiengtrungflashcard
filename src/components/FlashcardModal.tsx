@@ -183,7 +183,7 @@ export const FlashcardModal: React.FC<FlashcardModalProps> = ({
               value={example}
               onChange={(e) => setExample(e.target.value)}
               placeholder="VD: 我在学习汉语。(Tôi đang học tiếng Trung.)"
-              className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900"
+              className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900 font-chinese"
             />
           </div>
 
@@ -198,7 +198,7 @@ export const FlashcardModal: React.FC<FlashcardModalProps> = ({
                 value={synonyms}
                 onChange={(e) => setSynonyms(e.target.value)}
                 placeholder="VD: 研习, 学"
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-900 font-chinese"
               />
             </div>
 

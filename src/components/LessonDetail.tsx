@@ -595,7 +595,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                         <div className="bg-slate-50 p-2.5 rounded-xl text-xs text-slate-800 border border-slate-100 flex items-start justify-between gap-2">
                           <div>
                             <span className="text-[10px] font-bold text-indigo-600 block">Ví dụ:</span>
-                            <p className="text-slate-900 font-medium leading-relaxed">{card.example}</p>
+                            <p className="text-slate-900 font-medium leading-relaxed font-chinese">{card.example}</p>
                           </div>
                           <button
                             type="button"
@@ -614,7 +614,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
 
                       {card.synonym && (
                         <div className="text-[11px] text-slate-600">
-                          <strong className="text-slate-500">Đồng nghĩa:</strong> {card.synonym}
+                          <strong className="text-slate-500">Đồng nghĩa:</strong> <span className="font-chinese">{card.synonym}</span>
                         </div>
                       )}
 

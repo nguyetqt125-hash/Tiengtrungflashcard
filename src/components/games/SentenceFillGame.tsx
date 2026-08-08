@@ -222,7 +222,7 @@ export const SentenceFillGame: React.FC<SentenceFillGameProps> = ({
             </button>
           </div>
 
-          <h3 className="text-xl sm:text-2xl font-black text-amber-200 font-vietnamese leading-relaxed tracking-wide">
+          <h3 className="text-xl sm:text-2xl font-black text-amber-200 font-chinese leading-relaxed tracking-wide">
             {activeQuestion?.sentenceWithBlank}
           </h3>
 

@@ -337,7 +337,7 @@ export const SrsModal: React.FC<SrsModalProps> = ({
                   {/* Word Information */}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xl font-black text-slate-900 font-serif">
+                      <span className="text-xl font-black text-slate-900 font-chinese">
                         {card.term}
                       </span>
                       {card.pinyin && (

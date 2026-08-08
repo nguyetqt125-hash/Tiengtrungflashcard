@@ -292,7 +292,7 @@ export const HanziSlashGame: React.FC<HanziSlashGameProps> = ({
                   <span className="text-[10px] font-extrabold uppercase tracking-widest">Chém</span>
                 </div>
 
-                <span className="text-base sm:text-lg font-black text-white drop-shadow-md">
+                <span className="text-base sm:text-lg font-black text-white drop-shadow-md font-chinese">
                   {t.optionText}
                 </span>
               </div>

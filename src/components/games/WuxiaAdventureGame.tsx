@@ -284,7 +284,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
             <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest block">
               📜 Thử Thách Vượt Ải Chướng Ngại
             </span>
-            <span className={`text-base sm:text-lg font-black text-white ${activeQuestion?.questionField === 'term' ? 'font-chinese' : 'font-vietnamese'}`}>
+            <span className={`text-base sm:text-lg font-black text-white ${activeQuestion?.qType === 'term' || activeQuestion?.qType === 'audio' ? 'font-chinese' : 'font-vietnamese'}`}>
               "{activeQuestion?.promptText}"
             </span>
             {settings.showHint !== false && activeQuestion?.card.memoryTip && (
@@ -382,7 +382,7 @@ export const WuxiaAdventureGame: React.FC<WuxiaAdventureGameProps> = ({
                   <span className="w-7 h-7 bg-amber-600/20 text-amber-300 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-xl font-extrabold text-xs flex items-center justify-center transition-colors border border-amber-500/40">
                     {String.fromCharCode(65 + i)}
                   </span>
-                  <span className="group-hover:text-amber-200 transition-colors">{opt}</span>
+                  <span className="group-hover:text-amber-200 transition-colors font-chinese">{opt}</span>
                 </div>
                 <Shield className="w-4 h-4 text-amber-600/60 group-hover:text-amber-400 transition-colors" />
               </button>

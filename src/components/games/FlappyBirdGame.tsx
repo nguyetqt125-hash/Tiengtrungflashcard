@@ -579,7 +579,7 @@ export const FlappyBirdGame: React.FC<FlappyBirdGameProps> = ({
                       <span className="w-6 h-6 bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 rounded-lg font-bold text-[11px] flex items-center justify-center shrink-0">
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className="line-clamp-2">{opt}</span>
+                      <span className="line-clamp-2 font-chinese">{opt}</span>
                     </button>
                   ))}
                 </div>
