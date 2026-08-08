@@ -28,6 +28,7 @@ import {
 import { speakChinese } from '../utils/speech';
 import { saveTestResult } from '../utils/storage';
 import { recordCardReview } from '../utils/srs';
+import { STORAGE_KEYS } from '../constants';
 import { HanziWriterModal } from './HanziWriterModal';
 import { evaluateAnswer, EvaluationMode } from '../utils/answerChecker';
 import { PenTool } from 'lucide-react';
@@ -52,6 +53,42 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
     timeLimitMinutes: 0, // unlimited
     showHints: true,
   });
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
+
+  // Load saved settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TEST_SETTINGS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.evaluationMode) setEvaluationMode(parsed.evaluationMode);
+        if (parsed.settings) {
+          setSettings((prev) => ({
+            ...prev,
+            ...parsed.settings,
+            questionCount: Math.min(cards.length, parsed.settings.questionCount || 10),
+          }));
+        }
+      }
+    } catch (e) {
+      console.error('Error loading test settings:', e);
+    }
+  }, [cards.length]);
+
+  const saveTestSettings = (customSettings?: TestSettings, customEval?: EvaluationMode) => {
+    const sToSave = customSettings || settings;
+    const eToSave = customEval || evaluationMode;
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.TEST_SETTINGS,
+        JSON.stringify({ settings: sToSave, evaluationMode: eToSave })
+      );
+      setSaveSuccessMsg(true);
+      setTimeout(() => setSaveSuccessMsg(false), 2500);
+    } catch (e) {
+      console.error('Error saving test settings:', e);
+    }
+  };
 
   // Test Execution State
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -67,6 +104,7 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
   // Generate Questions based on Settings
   const generateQuestions = () => {
     if (cards.length === 0) return;
+    saveTestSettings(settings, evaluationMode);
 
     // Shuffle and pick cards up to questionCount
     const selectedCards = [...cards]
@@ -466,6 +504,38 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               </div>
             </div>
 
+            {/* Evaluation Mode */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-2">5. Chế độ kiểm tra đáp án:</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEvaluationMode('flexible')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    evaluationMode === 'flexible'
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="text-xs font-bold">Linh hoạt (Không cần gõ dấu câu)</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Khớp 1 từ chính hoặc bỏ qua ký tự đặc biệt</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEvaluationMode('strict')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    evaluationMode === 'strict'
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="text-xs font-bold">Chặt chẽ (Khớp chính xác)</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Yêu cầu khớp chính xác từng ký tự</div>
+                </button>
+              </div>
+            </div>
+
             {/* Hint Toggle */}
             <div className="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
               <span className="text-xs font-semibold text-slate-300">Hiển thị gợi ý Mẹo nhớ / Ví dụ trong lúc thi</span>
@@ -477,14 +547,35 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               />
             </div>
 
-            {/* Start Button */}
-            <button
-              onClick={generateQuestions}
-              className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Bắt Đầu Làm Bài Kiểm Tra</span>
-            </button>
+            {/* Action Buttons: Save Settings & Start */}
+            <div className="space-y-2 pt-2">
+              {saveSuccessMsg && (
+                <div className="p-2.5 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Đã lưu cài đặt bài thi làm mặc định cho lần sau!</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => saveTestSettings()}
+                  className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 text-indigo-400" />
+                  <span>Lưu Cài Đặt Mặc Định</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={generateQuestions}
+                  className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Lưu & Bắt Đầu Làm Bài</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Hanzi Writer Practice Modal */}
@@ -733,10 +824,13 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
               </div>
 
               <button
-                onClick={() => setIsTestSettingsOpen(false)}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl cursor-pointer"
+                onClick={() => {
+                  saveTestSettings(settings, evaluationMode);
+                  setIsTestSettingsOpen(false);
+                }}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
               >
-                Đóng & Tiếp Tục Làm Bài
+                <span>Lưu Cài Đặt & Tiếp Tục Làm Bài</span>
               </button>
             </div>
           </div>

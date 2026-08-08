@@ -310,9 +310,9 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+            className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
-            Lưu thay đổi
+            <span>Lưu Cài Đặt (Mặc Định)</span>
           </button>
         </div>
       </div>

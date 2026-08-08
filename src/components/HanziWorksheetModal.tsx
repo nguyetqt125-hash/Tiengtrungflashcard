@@ -11,8 +11,10 @@ import {
   ChevronRight,
   Sparkles,
   Sliders,
+  CheckCircle2,
 } from 'lucide-react';
 import { Course, Lesson, Flashcard } from '../types';
+import { STORAGE_KEYS } from '../constants';
 
 interface HanziWorksheetModalProps {
   isOpen: boolean;
@@ -63,6 +65,45 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
   const [headerFirstPageOnly, setHeaderFirstPageOnly] = useState<boolean>(false); // Only show header & student info on page 1
   const [pagesPerChar, setPagesPerChar] = useState<number>(0); // 0 = Liền mạch (Nhiều chữ/trang), 1 = 1 trang/chữ, 2 = 2 trang/chữ, 3 = 3 trang/chữ
   const [boxesPerRow, setBoxesPerRow] = useState<number>(11); // 11 ô / dòng A4
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
+
+  // Load saved worksheet settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.WORKSHEET_SETTINGS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.gridStyle) setGridStyle(parsed.gridStyle);
+        if (parsed.gridColor) setGridColor(parsed.gridColor);
+        if (parsed.practiceMode) setPracticeMode(parsed.practiceMode);
+        if (typeof parsed.showPinyinLines === 'boolean') setShowPinyinLines(parsed.showPinyinLines);
+        if (typeof parsed.showStrokeOrder === 'boolean') setShowStrokeOrder(parsed.showStrokeOrder);
+        if (typeof parsed.headerFirstPageOnly === 'boolean') setHeaderFirstPageOnly(parsed.headerFirstPageOnly);
+        if (typeof parsed.pagesPerChar === 'number') setPagesPerChar(parsed.pagesPerChar);
+      }
+    } catch (e) {
+      console.error('Error loading worksheet settings:', e);
+    }
+  }, []);
+
+  const saveWorksheetSettings = () => {
+    try {
+      const payload = {
+        gridStyle,
+        gridColor,
+        practiceMode,
+        showPinyinLines,
+        showStrokeOrder,
+        headerFirstPageOnly,
+        pagesPerChar,
+      };
+      localStorage.setItem(STORAGE_KEYS.WORKSHEET_SETTINGS, JSON.stringify(payload));
+      setSaveSuccessMsg(true);
+      setTimeout(() => setSaveSuccessMsg(false), 2500);
+    } catch (e) {
+      console.error('Error saving worksheet settings:', e);
+    }
+  };
 
   // Character Data State
   const [charItems, setCharItems] = useState<CharacterWorksheetItem[]>([]);
@@ -671,6 +712,24 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                   className="w-4 h-4 accent-emerald-500 rounded cursor-pointer shrink-0"
                 />
               </label>
+            </div>
+
+            {/* Save Settings Button */}
+            <div className="pt-2">
+              {saveSuccessMsg && (
+                <div className="mb-2 p-2 bg-emerald-950/80 border border-emerald-500/50 rounded-xl text-center text-[11px] font-bold text-emerald-300 flex items-center justify-center gap-1.5 animate-in fade-in">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Đã lưu cài đặt làm mặc định!</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={saveWorksheetSettings}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sliders className="w-4 h-4" />
+                <span>Lưu Cài Đặt Mặc Định</span>
+              </button>
             </div>
           </div>
         </div>

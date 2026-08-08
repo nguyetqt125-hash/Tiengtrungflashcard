@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Flashcard, Lesson } from '../types';
+import { STORAGE_KEYS } from '../constants';
 import { GameSettingsModal, GameCustomSettings } from './games/GameSettingsModal';
 import { ConfirmExitModal } from './ConfirmExitModal';
 import { HanziSlashGame } from './games/HanziSlashGame';
@@ -86,6 +87,22 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
       soundEnabled: true,
     },
   });
+
+  // Load saved game settings from localStorage on mount
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.GAME_SETTINGS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setGameSettings((prev) => ({
+          ...prev,
+          ...parsed,
+        }));
+      }
+    } catch (e) {
+      console.error('Error loading game settings:', e);
+    }
+  }, []);
 
   // Finish State
   const [isCompleted, setIsCompleted] = useState(false);
@@ -584,7 +601,15 @@ export const MatchingGame: React.FC<MatchingGameProps> = ({ lesson, cards, onClo
           totalCardsCount={cards.length}
           onClose={() => setActiveSettingsModal(null)}
           onSave={(newSet) => {
-            setGameSettings((prev) => ({ ...prev, [activeSettingsModal]: newSet }));
+            setGameSettings((prev) => {
+              const updated = { ...prev, [activeSettingsModal]: newSet };
+              try {
+                localStorage.setItem(STORAGE_KEYS.GAME_SETTINGS, JSON.stringify(updated));
+              } catch (e) {
+                console.error('Error saving game settings:', e);
+              }
+              return updated;
+            });
           }}
         />
       )}

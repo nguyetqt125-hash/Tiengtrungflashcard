@@ -1696,10 +1696,13 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
             </div>
 
             <button
-              onClick={() => setIsLearnSettingsOpen(false)}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
+              onClick={() => {
+                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode);
+                setIsLearnSettingsOpen(false);
+              }}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
             >
-              Lưu & Áp Dụng
+              Lưu Cài Đặt & Áp Dụng
             </button>
           </div>
         </div>
@@ -2040,10 +2043,13 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
             </div>
 
             <button
-              onClick={() => setIsFlashcardSettingsOpen(false)}
+              onClick={() => {
+                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode);
+                setIsFlashcardSettingsOpen(false);
+              }}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
             >
-              Áp Dụng & Tiếp Tục Học Flashcard
+              Lưu Cài Đặt & Tiếp Tục Học Flashcard
             </button>
           </div>
         </div>
