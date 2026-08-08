@@ -415,7 +415,11 @@ export default function App() {
       <HanziWorksheetModal
         isOpen={isWorksheetOpen}
         onClose={() => setIsWorksheetOpen(false)}
-        cards={currentLessonId ? cards.filter((c) => c.lessonId === currentLessonId) : cards}
+        courses={courses}
+        lessons={lessons}
+        cards={cards}
+        initialCourseId={currentCourseId}
+        initialLessonId={currentLessonId}
         lessonTitle={currentLesson?.name || 'Vở Tập Viết Chữ Hán'}
       />
     </div>
