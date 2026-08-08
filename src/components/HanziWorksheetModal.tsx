@@ -239,9 +239,16 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
             size: A4 portrait;
             margin: 0mm;
           }
-          body {
+          html, body, #root {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
             background: white !important;
             color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: static !important;
             font-family: 'Inter', 'Plus Jakarta Sans', 'Be Vietnam Pro', sans-serif !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -250,18 +257,39 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
             display: none !important;
           }
           .print-modal-bg {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
             width: 100% !important;
             height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
             background: white !important;
             overflow: visible !important;
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .print-main-content {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           .print-canvas-area {
-            padding: 0 !important;
-            background: white !important;
+            display: block !important;
+            position: static !important;
             overflow: visible !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
           }
           .a4-page {
             position: relative !important;
@@ -346,7 +374,7 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="print-main-content flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left Control Panel */}
         <div className="no-print w-full lg:w-80 bg-slate-900 border-r border-slate-800 p-5 overflow-y-auto space-y-5 shrink-0">
           {/* Section 1: Course & Lesson Selectors */}
