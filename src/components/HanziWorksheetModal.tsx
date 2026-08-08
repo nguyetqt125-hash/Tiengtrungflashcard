@@ -664,6 +664,9 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
               let pageCounter = 1;
               charItems.forEach((item, charIdx) => {
                 for (let p = 0; p < pagesPerChar; p++) {
+                  const hasStrokes = showStrokeOrder && item.strokes && item.strokes.length > 0;
+                  const rows = p === 0 ? (hasStrokes ? 10 : 12) : 13;
+
                   pages.push({
                     pageIndex: pageCounter++,
                     blocks: [
@@ -672,7 +675,7 @@ export const HanziWorksheetModal: React.FC<HanziWorksheetModalProps> = ({
                         charGlobalIndex: charIdx + 1,
                         pageIdxForChar: p,
                         totalPagesForChar: pagesPerChar,
-                        rowCountForBlock: p === 0 ? 5 : 8,
+                        rowCountForBlock: rows,
                       },
                     ],
                   });
