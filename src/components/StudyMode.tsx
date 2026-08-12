@@ -120,6 +120,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
   const [answerInputMode, setAnswerInputMode] = useState<AnswerInputMode>('multiple_choice');
   const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('flexible');
   const [enterToNext, setEnterToNext] = useState<boolean>(true);
+  const [learnBatchSize, setLearnBatchSize] = useState<number>(10);
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
   // Load saved settings from localStorage on mount
@@ -137,6 +138,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         if (typeof parsed.autoSpeak === 'boolean') setAutoSpeak(parsed.autoSpeak);
         if (typeof parsed.isSrsEnabled === 'boolean') setIsSrsEnabled(parsed.isSrsEnabled);
         if (typeof parsed.enterToNext === 'boolean') setEnterToNext(parsed.enterToNext);
+        if (typeof parsed.learnBatchSize === 'number') setLearnBatchSize(parsed.learnBatchSize);
       }
     } catch (e) {
       console.error('Error loading study settings:', e);
@@ -153,7 +155,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     speak: boolean,
     srs: boolean,
     evalMode: EvaluationMode = evaluationMode,
-    enterNext: boolean = enterToNext
+    enterNext: boolean = enterToNext,
+    batchSize: number = learnBatchSize
   ) => {
     try {
       const payload = {
@@ -166,6 +169,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         autoSpeak: speak,
         isSrsEnabled: srs,
         enterToNext: enterNext,
+        learnBatchSize: batchSize,
       };
       localStorage.setItem(STORAGE_KEYS.STUDY_SETTINGS, JSON.stringify(payload));
     } catch (e) {
@@ -429,18 +433,20 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
       return;
     }
 
-    // Filter unmastered cards that have not been seen in the current cycle yet
-    const unseenCards = unmastered.filter((c) => !seenCardIds.includes(c.id));
+    // Filter cards to current batch size if learnBatchSize > 0
+    const activeBatch = learnBatchSize > 0 ? unmastered.slice(0, learnBatchSize) : unmastered;
+
+    // Filter active batch cards that have not been seen in the current cycle yet
+    const unseenCards = activeBatch.filter((c) => !seenCardIds.includes(c.id));
 
     let targetCard: Flashcard;
 
     if (unseenCards.length > 0) {
-      // Prioritize new cards that haven't appeared yet!
+      // Prioritize new cards in current batch that haven't appeared yet!
       targetCard = unseenCards[Math.floor(Math.random() * unseenCards.length)];
     } else {
-      // All cards have been presented at least once. Now review remaining unmastered cards.
-      // Avoid repeating the exact last shown card if there are multiple unmastered cards available.
-      const candidates = unmastered.filter((c) => unmastered.length <= 1 || c.id !== lastShownCardId);
+      // All cards in active batch have been presented at least once. Review remaining unmastered in batch.
+      const candidates = activeBatch.filter((c) => activeBatch.length <= 1 || c.id !== lastShownCardId);
       targetCard = candidates[Math.floor(Math.random() * candidates.length)];
     }
 
@@ -919,12 +925,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
             {/* Header with settings button inside Learn tab */}
             <div className="flex items-center justify-between bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
               <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-xs sm:text-sm text-white">Chế Độ Ôn Tập Thông Minh</span>
+                <Brain className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div>
+                  <span className="font-bold text-xs sm:text-sm text-white block">Chế Độ Ôn Tập Thông Minh</span>
+                  {learnBatchSize > 0 && stats.mastered < cards.length && (
+                    <span className="text-[10px] text-emerald-400 font-semibold block">
+                      Đang học đợt {Math.floor(stats.mastered / learnBatchSize) + 1}: tối đa {learnBatchSize} từ/đợt (Học hết đợt tự động sang đợt tiếp)
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setIsLearnSettingsOpen(true)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 cursor-pointer flex items-center gap-1.5 shrink-0"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Cài Đặt Ôn Tập</span>
@@ -1712,6 +1725,49 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 </div>
               </div>
 
+              {/* SỐ TỪ HỌC MỖI ĐỢT (BATCH SIZE) */}
+              <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-slate-200 block">Số từ học mỗi đợt:</span>
+                    <span className="text-[11px] text-slate-400">Học xong đợt này tự động chuyển sang các từ tiếp theo</span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800/80">
+                    {learnBatchSize === 0 ? 'Tất cả' : `${learnBatchSize} từ/đợt`}
+                  </span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5 pt-1">
+                  {[5, 10, 15, 20, 0].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        setLearnBatchSize(size);
+                        saveSettingsToStorage(
+                          flashcardFrontFields,
+                          flashcardBackFields,
+                          questionFields,
+                          answerFields,
+                          answerInputMode,
+                          autoSpeak,
+                          isSrsEnabled,
+                          evaluationMode,
+                          enterToNext,
+                          size
+                        );
+                      }}
+                      className={`py-2 rounded-xl text-center font-bold text-xs cursor-pointer transition-colors ${
+                        learnBatchSize === size
+                          ? 'bg-emerald-600 text-white border border-emerald-400 shadow-md'
+                          : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                      }`}
+                    >
+                      {size === 0 ? 'Tất cả' : `${size} từ`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* TÙY CHỌN PHÁT ÂM */}
               <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                 <div>
@@ -1723,7 +1779,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={autoSpeak}
                   onChange={(e) => {
                     setAutoSpeak(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled, evaluationMode, enterToNext);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled, evaluationMode, enterToNext, learnBatchSize);
                   }}
                   className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
@@ -1740,7 +1796,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={enterToNext}
                   onChange={(e) => {
                     setEnterToNext(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, e.target.checked);
+                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, e.target.checked, learnBatchSize);
                   }}
                   className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
@@ -1749,7 +1805,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
             <button
               onClick={() => {
-                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, enterToNext);
+                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, enterToNext, learnBatchSize);
                 setIsLearnSettingsOpen(false);
               }}
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
