@@ -26,6 +26,7 @@ import {
   RefreshCw,
   AlertTriangle,
   PenTool,
+  Lightbulb,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Flashcard, Lesson } from '../types';
@@ -1190,6 +1191,15 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                             <Volume2 className="w-3.5 h-3.5 text-amber-300" />
                             <span>Nghe ví dụ</span>
                           </button>
+                        </div>
+                      )}
+                      {currentLearnCard.memoryTip && (
+                        <div className="flex items-start gap-2 pt-2 border-t border-slate-800/80 text-amber-300 text-xs sm:text-sm">
+                          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="text-amber-400 block text-xs font-bold">Mẹo ghi nhớ:</strong>
+                            <span className="text-amber-200">{currentLearnCard.memoryTip}</span>
+                          </div>
                         </div>
                       )}
                     </div>

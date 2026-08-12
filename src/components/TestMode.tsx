@@ -13,6 +13,7 @@ import {
   Award,
   Volume2,
   AlertTriangle,
+  Lightbulb,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -1032,6 +1033,24 @@ export const TestMode: React.FC<TestModeProps> = ({ lesson, cards, onClose }) =>
                       <strong className="text-emerald-300 font-chinese text-base sm:text-lg">{ans.correctAnswer}</strong>
                     </div>
                   </div>
+
+                  {(() => {
+                    const matchedCard = cards.find(
+                      (c) => c.id === ans.cardId || c.term === ans.cardId
+                    );
+                    if (matchedCard?.memoryTip) {
+                      return (
+                        <div className="bg-amber-950/40 border border-amber-800/50 p-2.5 rounded-xl text-amber-200 text-xs flex items-start gap-2 mt-2">
+                          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold text-amber-300 block text-[10px]">Mẹo ghi nhớ:</span>
+                            <span>{matchedCard.memoryTip}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               ))}
             </div>
