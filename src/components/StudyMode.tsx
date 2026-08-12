@@ -122,6 +122,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
   const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>('flexible');
   const [enterToNext, setEnterToNext] = useState<boolean>(true);
   const [learnBatchSize, setLearnBatchSize] = useState<number>(10);
+  const [currentBatchCardIds, setCurrentBatchCardIds] = useState<string[]>([]);
+  const [isBatchCompleted, setIsBatchCompleted] = useState<boolean>(false);
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
   // Load saved settings from localStorage on mount
@@ -422,23 +424,48 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     return card.term;
   };
 
-  const generateNextLearnQuestion = (currentMasteryState?: Record<string, CardMasteryState>) => {
+  const generateNextLearnQuestion = (
+    currentMasteryState?: Record<string, CardMasteryState>,
+    overrideBatchIds?: string[]
+  ) => {
     if (cards.length === 0) return;
 
     const masteryToUse = currentMasteryState || cardMastery;
-    const unmastered = cards.filter((c) => (masteryToUse[c.id]?.level || 0) < 2);
+    const unmasteredAll = cards.filter((c) => (masteryToUse[c.id]?.level || 0) < 2);
 
-    if (unmastered.length === 0) {
+    if (unmasteredAll.length === 0) {
       setCurrentLearnCard(null);
+      setIsBatchCompleted(false);
       triggerConfetti();
       return;
     }
 
-    // Filter cards to current batch size if learnBatchSize > 0
-    const activeBatch = learnBatchSize > 0 ? unmastered.slice(0, learnBatchSize) : unmastered;
+    let activeBatchIds = overrideBatchIds || currentBatchCardIds;
+
+    let activeBatchCards = cards.filter(
+      (c) => activeBatchIds.includes(c.id) && (masteryToUse[c.id]?.level || 0) < 2
+    );
+
+    if (activeBatchCards.length === 0) {
+      if (learnBatchSize > 0) {
+        const nextBatchCards = unmasteredAll.slice(0, learnBatchSize);
+        activeBatchIds = nextBatchCards.map((c) => c.id);
+        setCurrentBatchCardIds(activeBatchIds);
+        activeBatchCards = nextBatchCards;
+      } else {
+        activeBatchCards = unmasteredAll;
+        activeBatchIds = unmasteredAll.map((c) => c.id);
+        setCurrentBatchCardIds(activeBatchIds);
+      }
+    }
+
+    if (activeBatchCards.length === 0) {
+      setCurrentLearnCard(null);
+      return;
+    }
 
     // Filter active batch cards that have not been seen in the current cycle yet
-    const unseenCards = activeBatch.filter((c) => !seenCardIds.includes(c.id));
+    const unseenCards = activeBatchCards.filter((c) => !seenCardIds.includes(c.id));
 
     let targetCard: Flashcard;
 
@@ -447,7 +474,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
       targetCard = unseenCards[Math.floor(Math.random() * unseenCards.length)];
     } else {
       // All cards in active batch have been presented at least once. Review remaining unmastered in batch.
-      const candidates = activeBatch.filter((c) => activeBatch.length <= 1 || c.id !== lastShownCardId);
+      const candidates = activeBatchCards.filter((c) => activeBatchCards.length <= 1 || c.id !== lastShownCardId);
       targetCard = candidates[Math.floor(Math.random() * candidates.length)];
     }
 
@@ -525,11 +552,50 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     }
   };
 
+  const checkBatchCompletion = (updatedMasteryState?: Record<string, CardMasteryState>): boolean => {
+    const masteryToUse = updatedMasteryState || cardMastery;
+    const unmasteredAll = cards.filter((c) => (masteryToUse[c.id]?.level || 0) < 2);
+
+    if (unmasteredAll.length === 0) {
+      setIsBatchCompleted(false);
+      setCurrentLearnCard(null);
+      triggerConfetti();
+      return true;
+    }
+
+    if (learnBatchSize > 0 && currentBatchCardIds.length > 0) {
+      const activeBatchUnmastered = currentBatchCardIds.filter(
+        (id) => (masteryToUse[id]?.level || 0) < 2
+      );
+      if (activeBatchUnmastered.length === 0) {
+        setIsBatchCompleted(true);
+        triggerConfetti();
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const handleStartNextBatch = () => {
+    setIsBatchCompleted(false);
+    const unmasteredAll = cards.filter((c) => (cardMastery[c.id]?.level || 0) < 2);
+    if (unmasteredAll.length === 0) {
+      setCurrentLearnCard(null);
+      return;
+    }
+    const nextBatchCards = unmasteredAll.slice(0, learnBatchSize > 0 ? learnBatchSize : unmasteredAll.length);
+    const nextBatchIds = nextBatchCards.map((c) => c.id);
+    setCurrentBatchCardIds(nextBatchIds);
+    setSeenCardIds([]);
+    generateNextLearnQuestion(cardMastery, nextBatchIds);
+  };
+
   useEffect(() => {
-    if (mainMode === 'learn' && Object.keys(cardMastery).length > 0 && !currentLearnCard) {
+    if (mainMode === 'learn' && Object.keys(cardMastery).length > 0 && !currentLearnCard && !isBatchCompleted) {
       generateNextLearnQuestion(cardMastery);
     }
-  }, [mainMode, cardMastery]);
+  }, [mainMode, cardMastery, isBatchCompleted]);
 
   const handleEvaluateAnswer = (submittedVal: string) => {
     if (isAnswerSubmitted || !currentLearnCard) return;
@@ -655,6 +721,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     });
     setSeenCardIds([]);
     setLastShownCardId(null);
+    setCurrentBatchCardIds([]);
+    setIsBatchCompleted(false);
     setCardMastery(resetMastery);
     try {
       localStorage.setItem('chinese_flashcard_mastery', JSON.stringify(resetMastery));
@@ -670,9 +738,14 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
       if (!enterToNext) return;
       if (e.key === 'Enter') {
         if (mainMode === 'learn') {
-          if (isAnswerSubmitted) {
+          if (isBatchCompleted) {
             e.preventDefault();
-            generateNextLearnQuestion(cardMastery);
+            handleStartNextBatch();
+          } else if (isAnswerSubmitted) {
+            e.preventDefault();
+            if (!checkBatchCompletion(cardMastery)) {
+              generateNextLearnQuestion(cardMastery);
+            }
           } else if (!isTypeInputCurrent) {
             e.preventDefault();
             handleIWasRight();
@@ -693,7 +766,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enterToNext, mainMode, isAnswerSubmitted, isTypeInputCurrent, isFcFlipped, displayedCards, cardMastery]);
+  }, [enterToNext, mainMode, isAnswerSubmitted, isBatchCompleted, isTypeInputCurrent, isFcFlipped, displayedCards, cardMastery, currentBatchCardIds, learnBatchSize]);
 
   const stats = useMemo(() => {
     let unlearned = 0;
@@ -930,8 +1003,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 <div>
                   <span className="font-bold text-xs sm:text-sm text-white block">Chế Độ Ôn Tập Thông Minh</span>
                   {learnBatchSize > 0 && stats.mastered < cards.length && (
-                    <span className="text-[10px] text-emerald-400 font-semibold block">
-                      Đang học đợt {Math.floor(stats.mastered / learnBatchSize) + 1}: tối đa {learnBatchSize} từ/đợt (Học hết đợt tự động sang đợt tiếp)
+                    <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold block mt-0.5">
+                      Đang học đợt {Math.floor(stats.mastered / learnBatchSize) + 1}: Đã thuộc {currentBatchCardIds.filter(id => (cardMastery[id]?.level || 0) >= 2).length}/{currentBatchCardIds.length || learnBatchSize} từ trong đợt
                     </span>
                   )}
                 </div>
@@ -988,6 +1061,41 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   >
                     <Award className="w-4 h-4" />
                     <span>Hoàn Thành & Thoát</span>
+                  </button>
+                </div>
+              </div>
+            ) : isBatchCompleted ? (
+              /* BATCH COMPLETED NOTIFICATION CARD */
+              <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-3xl p-8 text-center space-y-6 shadow-2xl my-auto animate-in zoom-in-95">
+                <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40 shadow-inner">
+                  <CheckCircle className="w-10 h-10 text-emerald-400 animate-bounce" />
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-2xl md:text-3xl font-black text-white">🎉 Hoàn Thành Đợt Học Thành Công!</h2>
+                  <p className="text-slate-300 text-xs md:text-sm max-w-md mx-auto leading-relaxed">
+                    Chúc mừng! Bạn đã xuất sắc học thuộc lòng <strong className="text-emerald-400">{currentBatchCardIds.length || learnBatchSize} từ vựng</strong> trong đợt này.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
+                  <div>
+                    <span className="text-slate-400 block mb-1">Đã thuộc tổng cộng</span>
+                    <span className="text-lg font-bold text-emerald-400">{stats.mastered} / {cards.length} từ</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-1">Số từ còn lại</span>
+                    <span className="text-lg font-bold text-amber-400">{cards.length - stats.mastered} từ</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  <button
+                    onClick={handleStartNextBatch}
+                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Chuyển Sang Đợt Tiếp Theo ({Math.min(learnBatchSize, cards.length - stats.mastered)} từ)</span>
                   </button>
                 </div>
               </div>
@@ -1205,7 +1313,11 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                     </div>
 
                     <button
-                      onClick={generateNextLearnQuestion.bind(null, cardMastery)}
+                      onClick={() => {
+                        if (!checkBatchCompletion(cardMastery)) {
+                          generateNextLearnQuestion(cardMastery);
+                        }
+                      }}
                       className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
                     >
                       <span>Câu Tiếp Theo ➔</span>
@@ -1753,6 +1865,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                       type="button"
                       onClick={() => {
                         setLearnBatchSize(size);
+                        setCurrentBatchCardIds([]);
+                        setIsBatchCompleted(false);
                         saveSettingsToStorage(
                           flashcardFrontFields,
                           flashcardBackFields,
