@@ -125,6 +125,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
   const [learnBatchSize, setLearnBatchSize] = useState<number>(10);
   const [currentBatchCardIds, setCurrentBatchCardIds] = useState<string[]>([]);
   const [isBatchCompleted, setIsBatchCompleted] = useState<boolean>(false);
+  const [isBatchSelectorOpen, setIsBatchSelectorOpen] = useState<boolean>(false);
   const [hideQuestionPinyin, setHideQuestionPinyin] = useState<boolean>(false);
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
@@ -429,6 +430,86 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     return card.term;
   };
 
+  const batches = useMemo(() => {
+    if (learnBatchSize <= 0 || cards.length <= learnBatchSize) {
+      const masteredCount = cards.filter((c) => (cardMastery[c.id]?.level || 0) >= 2).length;
+      return [
+        {
+          index: 0,
+          name: 'Toàn bộ bài học',
+          shortName: 'Tất cả từ',
+          rangeStr: `1 - ${cards.length}`,
+          cards: cards,
+          cardIds: cards.map((c) => c.id),
+          masteredCount,
+          totalCount: cards.length,
+          isCompleted: cards.length > 0 && masteredCount === cards.length,
+        },
+      ];
+    }
+    const result = [];
+    for (let i = 0; i < cards.length; i += learnBatchSize) {
+      const batchSlice = cards.slice(i, i + learnBatchSize);
+      const masteredCount = batchSlice.filter((c) => (cardMastery[c.id]?.level || 0) >= 2).length;
+      const batchIndex = Math.floor(i / learnBatchSize);
+      const startNum = i + 1;
+      const endNum = Math.min(i + learnBatchSize, cards.length);
+      result.push({
+        index: batchIndex,
+        name: `Đợt ${batchIndex + 1} (Từ ${startNum} - ${endNum})`,
+        shortName: `Đợt ${batchIndex + 1}`,
+        rangeStr: `${startNum} - ${endNum}`,
+        cards: batchSlice,
+        cardIds: batchSlice.map((c) => c.id),
+        masteredCount,
+        totalCount: batchSlice.length,
+        isCompleted: batchSlice.length > 0 && masteredCount === batchSlice.length,
+      });
+    }
+    return result;
+  }, [cards, learnBatchSize, cardMastery]);
+
+  const currentActiveBatchIndex = useMemo(() => {
+    if (batches.length <= 1) return 0;
+    const idx = batches.findIndex((b) => b.cardIds.some((id) => currentBatchCardIds.includes(id)));
+    return idx >= 0 ? idx : 0;
+  }, [batches, currentBatchCardIds]);
+
+  const handleSelectBatch = (batchIndex: number, forceReset: boolean = false) => {
+    const targetBatch = batches[batchIndex];
+    if (!targetBatch) return;
+
+    const targetCardIds = targetBatch.cardIds;
+    let updatedMastery = { ...cardMastery };
+
+    const allMastered = targetBatch.cards.every((c) => (updatedMastery[c.id]?.level || 0) >= 2);
+
+    if (forceReset || allMastered) {
+      targetCardIds.forEach((id) => {
+        updatedMastery[id] = {
+          level: 0,
+          correctInRow: 0,
+          lastReviewedAt: Date.now(),
+        };
+        saveCardProgress(id, 'unlearned');
+      });
+      setCardMastery(updatedMastery);
+      try {
+        localStorage.setItem('chinese_flashcard_mastery', JSON.stringify(updatedMastery));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    setCurrentBatchCardIds(targetCardIds);
+    setSeenCardIds([]);
+    setLastShownCardId(null);
+    setIsBatchCompleted(false);
+    setIsBatchSelectorOpen(false);
+
+    generateNextLearnQuestion(updatedMastery, targetCardIds);
+  };
+
   const generateNextLearnQuestion = (
     currentMasteryState?: Record<string, CardMasteryState>,
     overrideBatchIds?: string[]
@@ -453,10 +534,22 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
     if (activeBatchCards.length === 0) {
       if (learnBatchSize > 0) {
-        const nextBatchCards = unmasteredAll.slice(0, learnBatchSize);
-        activeBatchIds = nextBatchCards.map((c) => c.id);
-        setCurrentBatchCardIds(activeBatchIds);
-        activeBatchCards = nextBatchCards;
+        // Find the first batch with unmastered cards
+        const firstUnmasteredBatch = batches.find((b) =>
+          b.cards.some((c) => (masteryToUse[c.id]?.level || 0) < 2)
+        );
+        if (firstUnmasteredBatch) {
+          activeBatchIds = firstUnmasteredBatch.cardIds;
+          activeBatchCards = firstUnmasteredBatch.cards.filter(
+            (c) => (masteryToUse[c.id]?.level || 0) < 2
+          );
+          setCurrentBatchCardIds(activeBatchIds);
+        } else {
+          const nextBatchCards = unmasteredAll.slice(0, learnBatchSize);
+          activeBatchIds = nextBatchCards.map((c) => c.id);
+          setCurrentBatchCardIds(activeBatchIds);
+          activeBatchCards = nextBatchCards;
+        }
       } else {
         activeBatchCards = unmasteredAll;
         activeBatchIds = unmasteredAll.map((c) => c.id);
@@ -584,16 +677,25 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
   const handleStartNextBatch = () => {
     setIsBatchCompleted(false);
-    const unmasteredAll = cards.filter((c) => (cardMastery[c.id]?.level || 0) < 2);
-    if (unmasteredAll.length === 0) {
-      setCurrentLearnCard(null);
-      return;
+    const currentIdx = currentActiveBatchIndex;
+    const nextUnmasteredBatch =
+      batches.find((b, idx) => idx > currentIdx && b.cards.some((c) => (cardMastery[c.id]?.level || 0) < 2)) ||
+      batches.find((b) => b.cards.some((c) => (cardMastery[c.id]?.level || 0) < 2));
+
+    if (nextUnmasteredBatch) {
+      handleSelectBatch(nextUnmasteredBatch.index, false);
+    } else {
+      const unmasteredAll = cards.filter((c) => (cardMastery[c.id]?.level || 0) < 2);
+      if (unmasteredAll.length === 0) {
+        setCurrentLearnCard(null);
+        return;
+      }
+      const nextBatchCards = unmasteredAll.slice(0, learnBatchSize > 0 ? learnBatchSize : unmasteredAll.length);
+      const nextBatchIds = nextBatchCards.map((c) => c.id);
+      setCurrentBatchCardIds(nextBatchIds);
+      setSeenCardIds([]);
+      generateNextLearnQuestion(cardMastery, nextBatchIds);
     }
-    const nextBatchCards = unmasteredAll.slice(0, learnBatchSize > 0 ? learnBatchSize : unmasteredAll.length);
-    const nextBatchIds = nextBatchCards.map((c) => c.id);
-    setCurrentBatchCardIds(nextBatchIds);
-    setSeenCardIds([]);
-    generateNextLearnQuestion(cardMastery, nextBatchIds);
   };
 
   useEffect(() => {
@@ -1001,26 +1103,92 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         ========================================== */}
         {mainMode === 'learn' && (
           <div className="space-y-4">
-            {/* Header with settings button inside Learn tab */}
-            <div className="flex items-center justify-between bg-slate-900/90 p-3 rounded-2xl border border-slate-800">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-emerald-400 shrink-0" />
-                <div>
-                  <span className="font-bold text-xs sm:text-sm text-white block">Chế Độ Ôn Tập Thông Minh</span>
-                  {learnBatchSize > 0 && stats.mastered < cards.length && (
-                    <span className="text-[10px] sm:text-xs text-emerald-400 font-semibold block mt-0.5">
-                      Đang học đợt {Math.floor(stats.mastered / learnBatchSize) + 1}: Đã thuộc {currentBatchCardIds.filter(id => (cardMastery[id]?.level || 0) >= 2).length}/{currentBatchCardIds.length || learnBatchSize} từ trong đợt
-                    </span>
+            {/* Header with settings and batch navigation inside Learn tab */}
+            <div className="bg-slate-900/90 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                    <Brain className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-xs sm:text-sm text-white truncate">Chế Độ Ôn Tập Thông Minh</span>
+                      {learnBatchSize > 0 && batches.length > 1 && (
+                        <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0">
+                          Đợt {currentActiveBatchIndex + 1}/{batches.length}
+                        </span>
+                      )}
+                    </div>
+                    {learnBatchSize > 0 && (
+                      <span className="text-[11px] text-slate-300 font-medium block mt-0.5 truncate">
+                        {batches[currentActiveBatchIndex]?.name || `Đợt ${currentActiveBatchIndex + 1}`} • Đã thuộc {batches[currentActiveBatchIndex]?.masteredCount || 0}/{batches[currentActiveBatchIndex]?.totalCount || learnBatchSize} từ
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 ml-auto">
+                  {batches.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsBatchSelectorOpen(true)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-950/90 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/80 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+                      title="Mở danh sách tất cả các đợt học để chọn hoặc ôn lại"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Chọn Đợt ({batches.length})</span>
+                    </button>
                   )}
+                  <button
+                    onClick={() => setIsLearnSettingsOpen(true)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer flex items-center gap-1.5 transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Cài Đặt</span>
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={() => setIsLearnSettingsOpen(true)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 cursor-pointer flex items-center gap-1.5 shrink-0"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>Cài Đặt Ôn Tập</span>
-              </button>
+
+              {/* Quick Batch Pills Row */}
+              {learnBatchSize > 0 && batches.length > 1 && (
+                <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                    <Layers className="w-3 h-3 text-indigo-400" />
+                    Đợt:
+                  </span>
+                  {batches.map((b, idx) => {
+                    const isSelected = idx === currentActiveBatchIndex;
+                    return (
+                      <button
+                        key={b.index}
+                        type="button"
+                        onClick={() => handleSelectBatch(b.index, false)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 border ${
+                          isSelected
+                            ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm ring-2 ring-emerald-500/30'
+                            : b.isCompleted
+                            ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80 hover:bg-emerald-900/80 hover:border-emerald-700'
+                            : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                        }`}
+                        title={`Bấm để chuyển sang ${b.name}${b.isCompleted ? ' (Đã thuộc hết - Bấm để ôn lại)' : ''}`}
+                      >
+                        <span>{b.shortName}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                            isSelected
+                              ? 'bg-emerald-700 text-emerald-100'
+                              : b.isCompleted
+                              ? 'bg-emerald-900/80 text-emerald-300 font-bold'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {b.masteredCount}/{b.totalCount}{b.isCompleted ? ' ✓' : ''}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {stats.mastered === cards.length ? (
@@ -1055,14 +1223,23 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                   <button
                     onClick={handleResetMastery}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <RotateCw className="w-4 h-4" />
-                    <span>Luyện Ôn Lại Bài Này</span>
+                    <span>Luyện Ôn Lại Toàn Bộ</span>
                   </button>
+                  {batches.length > 1 && (
+                    <button
+                      onClick={() => setIsBatchSelectorOpen(true)}
+                      className="flex-1 py-3 bg-indigo-950/90 hover:bg-indigo-900 text-indigo-300 font-bold text-xs rounded-xl border border-indigo-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>Ôn Lại Từng Đợt</span>
+                    </button>
+                  )}
                   <button
                     onClick={onClose}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Award className="w-4 h-4" />
                     <span>Hoàn Thành & Thoát</span>
@@ -1077,9 +1254,11 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 </div>
 
                 <div className="space-y-2">
-                  <h2 className="text-2xl md:text-3xl font-black text-white">🎉 Hoàn Thành Đợt Học Thành Công!</h2>
+                  <h2 className="text-2xl md:text-3xl font-black text-white">
+                    🎉 Hoàn Thành {batches[currentActiveBatchIndex]?.shortName || `Đợt ${currentActiveBatchIndex + 1}`}!
+                  </h2>
                   <p className="text-slate-300 text-xs md:text-sm max-w-md mx-auto leading-relaxed">
-                    Chúc mừng! Bạn đã xuất sắc học thuộc lòng <strong className="text-emerald-400">{currentBatchCardIds.length || learnBatchSize} từ vựng</strong> trong đợt này.
+                    Chúc mừng! Bạn đã xuất sắc học thuộc lòng toàn bộ <strong className="text-emerald-400">{currentBatchCardIds.length || learnBatchSize} từ vựng</strong> trong đợt này.
                   </p>
                 </div>
 
@@ -1094,14 +1273,49 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                  <button
-                    onClick={handleStartNextBatch}
-                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Chuyển Sang Đợt Tiếp Theo ({Math.min(learnBatchSize, cards.length - stats.mastered)} từ)</span>
-                  </button>
+                <div className="flex flex-col gap-2.5 pt-2">
+                  {stats.mastered < cards.length ? (
+                    <button
+                      onClick={handleStartNextBatch}
+                      className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Chuyển Sang Đợt Tiếp Theo ({Math.min(learnBatchSize, cards.length - stats.mastered)} từ)</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsBatchCompleted(false);
+                      }}
+                      className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Trophy className="w-4 h-4" />
+                      <span>Xem Kết Quả Tổng Thể</span>
+                    </button>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectBatch(currentActiveBatchIndex, true)}
+                      className="w-full sm:flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                      title="Làm mới lại các từ trong đợt này và luyện lại từ đầu"
+                    >
+                      <RotateCw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Ôn Lại Đợt Này</span>
+                    </button>
+
+                    {batches.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsBatchSelectorOpen(true)}
+                        className="w-full sm:flex-1 py-2.5 bg-indigo-950/90 hover:bg-indigo-900 text-indigo-300 font-bold text-xs rounded-xl border border-indigo-700/80 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Chọn Đợt Học Khác</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : currentLearnCard ? (
@@ -2440,6 +2654,160 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
             >
               Lưu Cài Đặt & Tiếp Tục Học Flashcard
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP QUẢN LÝ VÀ CHỌN ĐỢT HỌC (BATCH SELECTOR & REVIEW) */}
+      {isBatchSelectorOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Danh Sách & Chọn Đợt Học</h3>
+                  <p className="text-xs text-slate-400">
+                    Bài học có {cards.length} từ • Chia làm {batches.length} đợt ({learnBatchSize > 0 ? `${learnBatchSize} từ/đợt` : 'Tất cả'})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBatchSelectorOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content List */}
+            <div className="space-y-3 overflow-y-auto flex-1 pr-1 scrollbar-thin">
+              {batches.map((b) => {
+                const isCurrentActive = b.index === currentActiveBatchIndex;
+                const batchPercent = b.totalCount > 0 ? Math.round((b.masteredCount / b.totalCount) * 100) : 0;
+                
+                return (
+                  <div
+                    key={b.index}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      isCurrentActive
+                        ? 'bg-slate-950 border-emerald-500/70 shadow-lg ring-1 ring-emerald-500/40'
+                        : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          isCurrentActive
+                            ? 'bg-emerald-500 text-slate-950'
+                            : b.isCompleted
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                            : 'bg-slate-800 text-slate-300'
+                        }`}>
+                          {b.name}
+                        </span>
+
+                        {isCurrentActive && (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800">
+                            ★ Đang Học
+                          </span>
+                        )}
+
+                        {b.isCompleted && !isCurrentActive && (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-400" />
+                            Đã thuộc 100%
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-300">
+                          {b.masteredCount}/{b.totalCount} từ
+                        </span>
+                        <span className="text-xs font-mono font-bold text-emerald-400">
+                          ({batchPercent}%)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Mini Progress Bar */}
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-3">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-300"
+                        style={{ width: `${batchPercent}%` }}
+                      />
+                    </div>
+
+                    {/* Preview Cards */}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-3.5">
+                      <span className="text-[11px] text-slate-400 font-medium mr-1">Từ trong đợt:</span>
+                      {b.cards.slice(0, 8).map((c) => {
+                        const isCardMastered = (cardMastery[c.id]?.level || 0) >= 2;
+                        return (
+                          <span
+                            key={c.id}
+                            className={`text-xs px-2 py-0.5 rounded-md font-medium ${
+                              isCardMastered
+                                ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
+                                : 'bg-slate-900 text-slate-300 border border-slate-800'
+                            }`}
+                            title={`${c.term} [${c.pinyin || ''}]: ${c.definition}`}
+                          >
+                            {c.term}
+                          </span>
+                        );
+                      })}
+                      {b.cards.length > 8 && (
+                        <span className="text-[11px] text-slate-400 font-medium">+{b.cards.length - 8} từ</span>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-900">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectBatch(b.index, false)}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                          isCurrentActive
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+                            : b.isCompleted
+                            ? 'bg-slate-800 hover:bg-slate-700 text-white'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        }`}
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>{isCurrentActive ? 'Tiếp Tục Học Đợt Này' : b.isCompleted ? 'Vào Học Lại Đợt Này' : 'Học Đợt Này'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectBatch(b.index, true)}
+                        className="py-2 px-3 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800 hover:border-amber-700/60 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                        title="Đặt lại mức thuộc của toàn bộ từ trong đợt này về 0 để ôn lại từ đầu"
+                      >
+                        <RotateCw className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Ôn Lại Từ Đầu</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsBatchSelectorOpen(false)}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
