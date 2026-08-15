@@ -20,6 +20,7 @@ import {
   Check,
   Award,
   Eye,
+  EyeOff,
   Sliders,
   Sparkles,
   Clock,
@@ -124,6 +125,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
   const [learnBatchSize, setLearnBatchSize] = useState<number>(10);
   const [currentBatchCardIds, setCurrentBatchCardIds] = useState<string[]>([]);
   const [isBatchCompleted, setIsBatchCompleted] = useState<boolean>(false);
+  const [hideQuestionPinyin, setHideQuestionPinyin] = useState<boolean>(false);
   const [writingCard, setWritingCard] = useState<Flashcard | null>(null);
 
   // Load saved settings from localStorage on mount
@@ -142,6 +144,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         if (typeof parsed.isSrsEnabled === 'boolean') setIsSrsEnabled(parsed.isSrsEnabled);
         if (typeof parsed.enterToNext === 'boolean') setEnterToNext(parsed.enterToNext);
         if (typeof parsed.learnBatchSize === 'number') setLearnBatchSize(parsed.learnBatchSize);
+        if (typeof parsed.hideQuestionPinyin === 'boolean') setHideQuestionPinyin(parsed.hideQuestionPinyin);
       }
     } catch (e) {
       console.error('Error loading study settings:', e);
@@ -159,7 +162,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
     srs: boolean,
     evalMode: EvaluationMode = evaluationMode,
     enterNext: boolean = enterToNext,
-    batchSize: number = learnBatchSize
+    batchSize: number = learnBatchSize,
+    hidePinyin: boolean = hideQuestionPinyin
   ) => {
     try {
       const payload = {
@@ -173,6 +177,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
         isSrsEnabled: srs,
         enterToNext: enterNext,
         learnBatchSize: batchSize,
+        hideQuestionPinyin: hidePinyin,
       };
       localStorage.setItem(STORAGE_KEYS.STUDY_SETTINGS, JSON.stringify(payload));
     } catch (e) {
@@ -1108,9 +1113,49 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                     <Brain className="w-4 h-4" />
                     <span>Học Thông Minh Quizlet</span>
                   </span>
-                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-300">
-                    Thẻ này: {cardMastery[currentLearnCard.id]?.level === 1 ? '🟡 Đang học' : '🔴 Chưa thuộc'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextState = !hideQuestionPinyin;
+                        setHideQuestionPinyin(nextState);
+                        saveSettingsToStorage(
+                          flashcardFrontFields,
+                          flashcardBackFields,
+                          questionFields,
+                          answerFields,
+                          answerInputMode,
+                          autoSpeak,
+                          isSrsEnabled,
+                          evaluationMode,
+                          enterToNext,
+                          learnBatchSize,
+                          nextState
+                        );
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                        hideQuestionPinyin
+                          ? 'bg-amber-950/80 text-amber-300 border-amber-700/80 hover:bg-amber-900'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+                      }`}
+                      title={hideQuestionPinyin ? 'Đang ẩn Pinyin ở câu hỏi (Bấm để hiện)' : 'Đang hiện Pinyin ở câu hỏi (Bấm để ẩn)'}
+                    >
+                      {hideQuestionPinyin ? (
+                        <>
+                          <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Ẩn Pinyin</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Hiện Pinyin</span>
+                        </>
+                      )}
+                    </button>
+                    <span className="bg-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-300">
+                      Thẻ này: {cardMastery[currentLearnCard.id]?.level === 1 ? '🟡 Đang học' : '🔴 Chưa thuộc'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* QUESTION DISPLAY */}
@@ -1162,7 +1207,37 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   </div>
 
                   {currentQuestionField === 'term' && currentLearnCard.pinyin && (
-                    <p className="text-lg font-mono text-amber-300 font-bold">[{currentLearnCard.pinyin}]</p>
+                    hideQuestionPinyin && !isAnswerSubmitted ? (
+                      <div className="pt-1 flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextState = false;
+                            setHideQuestionPinyin(nextState);
+                            saveSettingsToStorage(
+                              flashcardFrontFields,
+                              flashcardBackFields,
+                              questionFields,
+                              answerFields,
+                              answerInputMode,
+                              autoSpeak,
+                              isSrsEnabled,
+                              evaluationMode,
+                              enterToNext,
+                              learnBatchSize,
+                              nextState
+                            );
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs text-amber-400/80 bg-amber-950/40 hover:bg-amber-950/70 border border-amber-900/60 hover:border-amber-700 px-3 py-1 rounded-full transition-colors cursor-pointer"
+                          title="Bấm để xem gợi ý Pinyin"
+                        >
+                          <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Pinyin đã ẩn (Tránh gợi ý) • Bấm để xem</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-lg font-mono text-amber-300 font-bold">[{currentLearnCard.pinyin}]</p>
+                    )
                   )}
                 </div>
 
@@ -1892,6 +1967,35 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                 </div>
               </div>
 
+              {/* TÙY CHỌN ẨN PINYIN Ở CÂU HỎI */}
+              <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                <div>
+                  <span className="font-semibold text-slate-200 block">Ẩn Pinyin ở các câu hỏi</span>
+                  <span className="text-[11px] text-slate-400">Không hiển thị phiên âm Pinyin khi hỏi chữ Hán (tránh gợi ý đáp án)</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={hideQuestionPinyin}
+                  onChange={(e) => {
+                    setHideQuestionPinyin(e.target.checked);
+                    saveSettingsToStorage(
+                      flashcardFrontFields,
+                      flashcardBackFields,
+                      questionFields,
+                      answerFields,
+                      answerInputMode,
+                      autoSpeak,
+                      isSrsEnabled,
+                      evaluationMode,
+                      enterToNext,
+                      learnBatchSize,
+                      e.target.checked
+                    );
+                  }}
+                  className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
+                />
+              </div>
+
               {/* TÙY CHỌN PHÁT ÂM */}
               <div className="flex items-center justify-between bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                 <div>
@@ -1903,7 +2007,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={autoSpeak}
                   onChange={(e) => {
                     setAutoSpeak(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, e.target.checked, isSrsEnabled, evaluationMode, enterToNext, learnBatchSize);
+                    saveSettingsToStorage(
+                      flashcardFrontFields,
+                      flashcardBackFields,
+                      questionFields,
+                      answerFields,
+                      answerInputMode,
+                      e.target.checked,
+                      isSrsEnabled,
+                      evaluationMode,
+                      enterToNext,
+                      learnBatchSize,
+                      hideQuestionPinyin
+                    );
                   }}
                   className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
@@ -1920,7 +2036,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
                   checked={enterToNext}
                   onChange={(e) => {
                     setEnterToNext(e.target.checked);
-                    saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, e.target.checked, learnBatchSize);
+                    saveSettingsToStorage(
+                      flashcardFrontFields,
+                      flashcardBackFields,
+                      questionFields,
+                      answerFields,
+                      answerInputMode,
+                      autoSpeak,
+                      isSrsEnabled,
+                      evaluationMode,
+                      e.target.checked,
+                      learnBatchSize,
+                      hideQuestionPinyin
+                    );
                   }}
                   className="w-4 h-4 rounded text-emerald-600 cursor-pointer"
                 />
@@ -1929,7 +2057,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({ lesson, cards, onClose }) 
 
             <button
               onClick={() => {
-                saveSettingsToStorage(flashcardFrontFields, flashcardBackFields, questionFields, answerFields, answerInputMode, autoSpeak, isSrsEnabled, evaluationMode, enterToNext, learnBatchSize);
+                saveSettingsToStorage(
+                  flashcardFrontFields,
+                  flashcardBackFields,
+                  questionFields,
+                  answerFields,
+                  answerInputMode,
+                  autoSpeak,
+                  isSrsEnabled,
+                  evaluationMode,
+                  enterToNext,
+                  learnBatchSize,
+                  hideQuestionPinyin
+                );
                 setIsLearnSettingsOpen(false);
               }}
               className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
