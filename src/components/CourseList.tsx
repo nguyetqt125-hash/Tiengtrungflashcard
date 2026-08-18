@@ -65,17 +65,6 @@ export const CourseList: React.FC<CourseListProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {onOpenTour && (
-            <button
-              id="tour-banner-guide-btn"
-              onClick={onOpenTour}
-              className="px-4 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-              title="Xem hướng dẫn từng bước cách sử dụng"
-            >
-              <Brain className="w-4 h-4 text-indigo-600" />
-              <span>💡 Hướng Dẫn Từng Bước</span>
-            </button>
-          )}
           <button
             id="tour-add-course-btn"
             onClick={onAddCourse}

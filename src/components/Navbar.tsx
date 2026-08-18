@@ -81,16 +81,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {onOpenTour && (
               <button
                 id="tour-trigger-btn"
                 onClick={onOpenTour}
-                className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200/80 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                title="Xem hướng dẫn từng bước cách sử dụng"
+                className="px-3.5 py-2 bg-[#0D99FF] hover:bg-[#0088FF] text-white rounded-xl font-bold text-xs shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer active:scale-95 ring-2 ring-[#0D99FF]/20"
+                title="Xem hướng dẫn từng bước 6 tính năng nổi bật"
               >
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <span className="hidden sm:inline">Hướng Dẫn</span>
+                <span className="font-mono text-xs opacity-90">❖</span>
+                <span className="tracking-tight">Tour Hướng Dẫn</span>
               </button>
             )}
 
@@ -98,10 +98,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="tour-worksheet-btn"
                 onClick={onOpenWorksheet}
-                className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl font-bold text-xs border border-amber-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                 title="Tạo vở tập viết chữ Hán PDF"
               >
-                <FileText className="w-4 h-4 text-amber-600" />
+                <FileText className="w-4 h-4 text-slate-600" />
                 <span className="hidden sm:inline">Vở Tập Viết (A4)</span>
               </button>
             )}
