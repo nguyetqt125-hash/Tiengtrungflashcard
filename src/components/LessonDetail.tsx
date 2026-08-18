@@ -207,6 +207,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
 
           <div className="flex items-center gap-2">
             <button
+              id="tour-batch-import-btn"
               onClick={() => onOpenBatchImport(selectedLesson.id, selectedLesson.name)}
               className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200/60 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
@@ -215,6 +216,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
             </button>
 
             <button
+              id="tour-add-single-card-btn"
               onClick={() => onAddSingleCard(selectedLesson.id)}
               className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
@@ -282,29 +284,32 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                 </div>
 
                 {/* Major Action Buttons Bar */}
-                <div className="pt-2 flex flex-wrap items-center gap-3 border-t border-slate-800/80">
+                <div id="tour-study-actions" className="pt-2 flex flex-wrap items-center gap-3 border-t border-slate-800/80">
                   <button
+                    id="tour-study-all-btn"
                     disabled={lessonCards.length === 0}
                     onClick={() => onStartStudy(selectedLesson, lessonCards)}
-                    className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                   >
                     <Sparkles className="w-5 h-5" />
                     <span>⚡ Học Tất Cả Từ Vựng</span>
                   </button>
 
                   <button
+                    id="tour-game-btn"
                     disabled={lessonCards.length === 0}
                     onClick={() => onStartGame(selectedLesson, lessonCards)}
-                    className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                   >
                     <Gamepad2 className="w-5 h-5 text-indigo-300" />
                     <span>🎮 Trò Chơi Ôn Tập</span>
                   </button>
 
                   <button
+                    id="tour-test-btn"
                     disabled={lessonCards.length === 0}
                     onClick={() => onStartTest(selectedLesson, lessonCards)}
-                    className="px-5 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                   >
                     <FileCheck2 className="w-5 h-5" />
                     <span>📝 Làm Bài Kiểm Tra</span>
@@ -312,9 +317,10 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
 
                   {onOpenWorksheet && (
                     <button
+                      id="tour-lesson-worksheet-btn"
                       disabled={lessonCards.length === 0}
                       onClick={onOpenWorksheet}
-                      className="px-5 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-amber-300 border border-slate-700 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                      className="px-5 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-amber-300 border border-slate-700 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                     >
                       <FileText className="w-5 h-5 text-amber-400" />
                       <span>🖨️ In Vở Tập Viết (A4)</span>

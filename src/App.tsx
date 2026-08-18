@@ -29,6 +29,7 @@ import { StudyMode } from './components/StudyMode';
 import { MatchingGame } from './components/MatchingGame';
 import { TestMode } from './components/TestMode';
 import { HanziWorksheetModal } from './components/HanziWorksheetModal';
+import { OnboardingTour } from './components/OnboardingTour';
 
 export default function App() {
   // Navigation View State: 'courses' | 'lessons'
@@ -60,6 +61,9 @@ export default function App() {
   const [batchImportLessonName, setBatchImportLessonName] = useState<string>('');
 
   const [isGoogleSheetsModalOpen, setIsGoogleSheetsModalOpen] = useState(false);
+
+  // Tour / Onboarding Walkthrough State
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // SRS Modal State
   const [isSrsModalOpen, setIsSrsModalOpen] = useState(false);
@@ -209,6 +213,7 @@ export default function App() {
         }}
         onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
         onOpenWorksheet={() => setIsWorksheetOpen(true)}
+        onOpenTour={() => setIsTourOpen(true)}
       />
 
       {/* Main View Container */}
@@ -238,6 +243,7 @@ export default function App() {
               setSrsModalFilter(filter);
               setIsSrsModalOpen(true);
             }}
+            onOpenTour={() => setIsTourOpen(true)}
           />
         )}
 
@@ -421,6 +427,18 @@ export default function App() {
         initialCourseId={currentCourseId}
         initialLessonId={currentLessonId}
         lessonTitle={currentLesson?.name || 'Vở Tập Viết Chữ Hán'}
+      />
+
+      {/* Interactive Step-by-Step Onboarding Tour Overlay */}
+      <OnboardingTour
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        currentView={currentView}
+        onNavigateToSampleLesson={() => {
+          if (courses.length > 0) {
+            handleSelectCourse(courses[0].id);
+          }
+        }}
       />
     </div>
   );

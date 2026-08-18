@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ChevronRight, BookOpen, GraduationCap, FileText } from 'lucide-react';
+import { Plus, ChevronRight, BookOpen, GraduationCap, FileText, HelpCircle, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
   currentCourseId?: string | null;
@@ -11,6 +11,7 @@ interface NavbarProps {
   onOpenAddCourse?: () => void;
   onOpenGoogleSheets?: () => void;
   onOpenWorksheet?: () => void;
+  onOpenTour?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,13 +24,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAddCourse,
   onOpenGoogleSheets,
   onOpenWorksheet,
+  onOpenTour,
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Brand */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={onNavigateHome}>
+          <div id="tour-brand-logo" className="flex items-center gap-3 cursor-pointer" onClick={onNavigateHome}>
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-500 text-white flex items-center justify-center font-bold text-lg shadow-md">
               学
             </div>
@@ -80,8 +82,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {onOpenTour && (
+              <button
+                id="tour-trigger-btn"
+                onClick={onOpenTour}
+                className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200/80 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                title="Xem hướng dẫn từng bước cách sử dụng"
+              >
+                <Sparkles className="w-4 h-4 text-indigo-600" />
+                <span className="hidden sm:inline">Hướng Dẫn</span>
+              </button>
+            )}
+
             {onOpenWorksheet && (
               <button
+                id="tour-worksheet-btn"
                 onClick={onOpenWorksheet}
                 className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl font-bold text-xs border border-amber-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                 title="Tạo vở tập viết chữ Hán PDF"
@@ -93,6 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {onOpenAddCourse && (
               <button
+                id="tour-navbar-add-course"
                 onClick={onOpenAddCourse}
                 className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
               >

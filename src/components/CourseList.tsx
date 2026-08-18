@@ -14,6 +14,7 @@ interface CourseListProps {
   onAddLesson: (courseId: string) => void;
   onOpenGoogleSheets?: () => void;
   onOpenSrsModal?: (filter?: 'due' | 'box1' | 'box2' | 'box3' | 'all') => void;
+  onOpenTour?: () => void;
 }
 
 export const CourseList: React.FC<CourseListProps> = ({
@@ -27,6 +28,7 @@ export const CourseList: React.FC<CourseListProps> = ({
   onAddLesson,
   onOpenGoogleSheets,
   onOpenSrsModal,
+  onOpenTour,
 }) => {
   const [, setSrsTick] = useState(0);
 
@@ -63,9 +65,21 @@ export const CourseList: React.FC<CourseListProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {onOpenTour && (
+            <button
+              id="tour-banner-guide-btn"
+              onClick={onOpenTour}
+              className="px-4 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              title="Xem hướng dẫn từng bước cách sử dụng"
+            >
+              <Brain className="w-4 h-4 text-indigo-600" />
+              <span>💡 Hướng Dẫn Từng Bước</span>
+            </button>
+          )}
           <button
+            id="tour-add-course-btn"
             onClick={onAddCourse}
-            className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            className="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>+ Tạo Khóa Học Mới</span>
@@ -74,9 +88,9 @@ export const CourseList: React.FC<CourseListProps> = ({
       </div>
 
       {/* Streak & SRS (Lặp lại ngắt quãng) Stats Widget */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div id="tour-srs-streak" className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Box 1: Chuỗi Học Tập (Streak) */}
-        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between">
+        <div id="tour-streak-box" className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col justify-between">
           <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -110,6 +124,7 @@ export const CourseList: React.FC<CourseListProps> = ({
 
         {/* Box 2 & 3: Lặp Lại Ngắt Quãng (SRS / Leitner System Overview) */}
         <div 
+          id="tour-srs-box"
           onClick={() => onOpenSrsModal && onOpenSrsModal('due')}
           className="md:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs hover:shadow-md hover:border-indigo-300 transition-all flex flex-col justify-between cursor-pointer group"
         >
@@ -207,8 +222,8 @@ export const CourseList: React.FC<CourseListProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {courses.map((course) => {
+          <div id="tour-course-cards" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {courses.map((course, index) => {
               const courseLessons = lessons.filter((l) => l.courseId === course.id);
               const lessonIds = courseLessons.map((l) => l.id);
               const courseCards = cards.filter((card) => lessonIds.includes(card.lessonId));
@@ -217,6 +232,7 @@ export const CourseList: React.FC<CourseListProps> = ({
               return (
                 <div
                   key={course.id}
+                  id={index === 0 ? 'tour-first-course' : undefined}
                   className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-all p-5 flex flex-col justify-between group"
                 >
                   <div>
