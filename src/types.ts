@@ -82,6 +82,32 @@ export interface TestResult {
   answers: UserAnswer[];
 }
 
+export interface User {
+  id: string;
+  username: string;
+  displayName?: string;
+  role: 'admin' | 'user';
+  createdAt: number;
+  googleSheetUrl?: string;
+  googleAccountEmail?: string;
+  isGoogleConnected?: boolean;
+}
+
+export interface AuthState {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+}
+
+export interface UserAccountRecord {
+  id: string;
+  username: string;
+  password?: string;
+  displayName: string;
+  role: 'admin' | 'user';
+  personalSheetUrl?: string;
+  createdAt: number;
+}
+
 export interface ImportOptions {
   fieldDelimiter: '\t' | ',' | '|' | '-' | string;
   cardDelimiter: '\n' | ';' | '||' | string;

@@ -1,17 +1,33 @@
 import React from 'react';
-import { Plus, ChevronRight, BookOpen, GraduationCap, FileText, HelpCircle, Sparkles } from 'lucide-react';
+import {
+  Plus,
+  ChevronRight,
+  BookOpen,
+  GraduationCap,
+  FileText,
+  FileSpreadsheet,
+  User as UserIcon,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+} from 'lucide-react';
+import { User } from '../types';
 
 interface NavbarProps {
   currentCourseId?: string | null;
   currentCourseName?: string;
   currentLessonId?: string | null;
   currentLessonName?: string;
+  currentUser?: User | null;
   onNavigateHome: () => void;
   onNavigateCourse: (courseId: string) => void;
   onOpenAddCourse?: () => void;
   onOpenGoogleSheets?: () => void;
+  onOpenPersonalSheet?: () => void;
   onOpenWorksheet?: () => void;
   onOpenTour?: () => void;
+  onOpenAuth?: (mode: 'login' | 'register') => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,12 +35,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentCourseName,
   currentLessonId,
   currentLessonName,
+  currentUser,
   onNavigateHome,
   onNavigateCourse,
   onOpenAddCourse,
   onOpenGoogleSheets,
+  onOpenPersonalSheet,
   onOpenWorksheet,
   onOpenTour,
+  onOpenAuth,
+  onLogout,
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
@@ -44,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Breadcrumb Navigation */}
-          <nav className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200">
+          <nav className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200">
             <button
               onClick={onNavigateHome}
               className={`hover:text-indigo-600 flex items-center gap-1 transition-colors cursor-pointer ${
@@ -81,40 +101,103 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Tour Button */}
             {onOpenTour && (
               <button
                 id="tour-trigger-btn"
                 onClick={onOpenTour}
-                className="px-3.5 py-2 bg-[#0D99FF] hover:bg-[#0088FF] text-white rounded-xl font-bold text-xs shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer active:scale-95 ring-2 ring-[#0D99FF]/20"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-[#0D99FF] hover:bg-[#0088FF] text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ring-2 ring-[#0D99FF]/20"
                 title="Xem hướng dẫn từng bước 6 tính năng nổi bật"
               >
                 <span className="font-mono text-xs opacity-90">❖</span>
-                <span className="tracking-tight">Tour Hướng Dẫn</span>
+                <span className="hidden sm:inline tracking-tight">Tour Hướng Dẫn</span>
+                <span className="sm:hidden">Tour</span>
               </button>
             )}
 
+            {/* Google Sheet Sync Buttons */}
+            {currentUser?.role === 'admin' ? (
+              onOpenGoogleSheets && (
+                <button
+                  id="tour-admin-sheets-btn"
+                  onClick={onOpenGoogleSheets}
+                  className="px-3 py-1.5 sm:px-3 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Google Sheets Quản Trị Hệ Thống"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                  <span className="hidden md:inline">Sheet Quản Trị</span>
+                </button>
+              )
+            ) : (
+              onOpenPersonalSheet && (
+                <button
+                  id="tour-user-sheets-btn"
+                  onClick={onOpenPersonalSheet}
+                  className="px-3 py-1.5 sm:px-3 sm:py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Lưu dữ liệu vào Google Sheet của riêng bạn"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden md:inline">Google Sheet Cá Nhân</span>
+                </button>
+              )
+            )}
+
+            {/* Printable A4 Worksheet */}
             {onOpenWorksheet && (
               <button
                 id="tour-worksheet-btn"
                 onClick={onOpenWorksheet}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs border border-slate-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                 title="Tạo vở tập viết chữ Hán PDF"
               >
                 <FileText className="w-4 h-4 text-slate-600" />
-                <span className="hidden sm:inline">Vở Tập Viết (A4)</span>
+                <span className="hidden lg:inline">Vở Tập Viết (A4)</span>
               </button>
             )}
 
-            {onOpenAddCourse && (
-              <button
-                id="tour-navbar-add-course"
-                onClick={onOpenAddCourse}
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Tạo Khóa Học</span>
-              </button>
+            {/* Account Status / Login */}
+            {currentUser ? (
+              <div className="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-slate-200">
+                <button
+                  onClick={() => (currentUser.role === 'admin' ? onOpenGoogleSheets?.() : onOpenPersonalSheet?.())}
+                  className={`px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all border ${
+                    currentUser.role === 'admin'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200/80 hover:bg-amber-100'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                  title={currentUser.role === 'admin' ? 'Tài khoản Quản trị viên' : 'Tài khoản Học viên'}
+                >
+                  {currentUser.role === 'admin' ? (
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  ) : (
+                    <UserIcon className="w-3.5 h-3.5 text-[#0D99FF]" />
+                  )}
+                  <span className="max-w-[100px] truncate font-mono text-[11px]">
+                    {currentUser.username}
+                  </span>
+                </button>
+
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                    title="Đăng xuất tài khoản"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <button
+                  onClick={() => onOpenAuth?.('login')}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Đăng Nhập</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

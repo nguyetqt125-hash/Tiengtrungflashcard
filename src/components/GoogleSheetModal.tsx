@@ -1,23 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Check, FileSpreadsheet, RefreshCw, Upload, Download, AlertCircle, HelpCircle } from 'lucide-react';
-import { Course, Lesson, Flashcard } from '../types';
+import {
+  X,
+  Copy,
+  Check,
+  FileSpreadsheet,
+  RefreshCw,
+  Upload,
+  Download,
+  AlertCircle,
+  HelpCircle,
+  ShieldCheck,
+  Users,
+  Key,
+} from 'lucide-react';
+import { Course, Lesson, Flashcard, User } from '../types';
 import { getCourses, getLessons, getCards, saveCourses, saveLessons, saveCards } from '../utils/storage';
 import { STORAGE_KEYS, GOOGLE_SCRIPT_URL } from '../constants';
+import { getAllUsers } from '../utils/auth';
 
 interface GoogleSheetModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRefreshData: () => void;
+  currentUser?: User | null;
 }
 
 const CODE_GS_SCRIPT = `/**
- * GOOGLE APPS SCRIPT CODE
- * Copy toàn bộ nội dung file này vào editor tại script.google.com
+ * GOOGLE APPS SCRIPT CODE - HỆ THỐNG QUẢN TRỊ TOÀN DIỆN (ADMIN & TÀI KHOẢN NGƯỜI DÙNG)
+ * Tác giả: Lan Nhi (lannhi)
+ * Copy toàn bộ nội dung file này vào editor tại script.google.com của file Google Sheet Quản Trị
  */
 
-// CẤU HÌNH TÊN SHEET VÀ HEADERS (ĐẦY ĐỦ CÁC CỘT DỮ LIỆU APPS)
+// CẤU HÌNH CÁC TRANG TÍNH (SHEETS)
+const SHEET_USERS = "TaiKhoan";
 const SHEET_COURSES = "KhoaHoc";
 const SHEET_LESSONS = "BaiHoc";
+
+const USER_HEADERS = [
+  "ID Người Dùng",
+  "Tên Đăng Nhập",
+  "Mật Khẩu",
+  "Tên Hiển Thị",
+  "Vai Trò",
+  "Link Google Sheet Cá Nhân",
+  "Ngày Tạo"
+];
 
 const COURSE_HEADERS = [
   "ID Khóa Học",
@@ -49,7 +76,7 @@ const CARD_HEADERS = [
 ];
 
 /**
- * Hàm chọn chạy thủ công 'setup' trên trang script.google.com để tự động tạo cấu trúc bảng ngay lập tức
+ * Hàm khởi tạo cấu trúc các Sheet tự động
  */
 function setup() {
   return setupSheetDatabase();
@@ -58,9 +85,26 @@ function setup() {
 function setupSheetDatabase() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  // 1. Khởi tạo bảng Người Dùng / Tài Khoản
+  var userSheet = getOrCreateFormattedSheet(ss, SHEET_USERS, USER_HEADERS, "#0284c7");
+  // Thêm tài khoản admin lannhi mặc định nếu chưa có
+  if (userSheet.getLastRow() === 1) {
+    userSheet.appendRow([
+      "admin-lannhi",
+      "lannhi",
+      "123456",
+      "Lan Nhi (Quản Trị Viên)",
+      "admin",
+      "",
+      new Date().toLocaleString("vi-VN")
+    ]);
+  }
+
+  // 2. Khởi tạo bảng Khóa Học & Bài Học
   getOrCreateFormattedSheet(ss, SHEET_COURSES, COURSE_HEADERS, "#047857");
   getOrCreateFormattedSheet(ss, SHEET_LESSONS, LESSON_HEADERS, "#9a3412");
 
+  // 3. Khởi tạo bảng Từ Vựng
   var sheets = ss.getSheets();
   var hasVocabSheet = false;
   for (var i = 0; i < sheets.length; i++) {
@@ -79,7 +123,10 @@ function setupSheetDatabase() {
     try { ss.deleteSheet(defaultSheet); } catch (e) {}
   }
 
-  return { status: "success", message: "Khởi tạo thành công các trang tính Google Sheets (Khóa học, Bài học, Từ vựng phân theo từng khóa học)!" };
+  return { 
+    status: "success", 
+    message: "Khởi tạo thành công các trang tính Google Sheets (Tài khoản, Khóa học, Bài học, Từ vựng)!" 
+  };
 }
 
 function sanitizeSheetName(name) {
@@ -90,7 +137,7 @@ function sanitizeSheetName(name) {
 }
 
 /**
- * Hàm xử lý khi nhận request POST từ Web App
+ * Xử lý POST request từ Web App
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -105,6 +152,40 @@ function doPost(e) {
       return responseJSON(setupSheetDatabase());
     }
 
+    // 1. Đăng ký / Lưu tài khoản người dùng
+    if (action === 'registerUser' || action === 'saveUser') {
+      var user = contents.user;
+      if (user && user.username) {
+        var uSheet = getOrCreateFormattedSheet(ss, SHEET_USERS, USER_HEADERS, "#0284c7");
+        var values = uSheet.getDataRange().getValues();
+        var existingRowIndex = -1;
+        for (var r = 1; r < values.length; r++) {
+          if (String(values[r][1]).toLowerCase() === String(user.username).toLowerCase()) {
+            existingRowIndex = r + 1;
+            break;
+          }
+        }
+
+        var rowData = [
+          user.id || ('usr_' + Date.now()),
+          user.username,
+          user.password || '',
+          user.displayName || user.username,
+          user.role || 'user',
+          user.personalSheetUrl || '',
+          user.createdAt ? new Date(user.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')
+        ];
+
+        if (existingRowIndex > 0) {
+          uSheet.getRange(existingRowIndex, 1, 1, rowData.length).setValues([rowData]);
+        } else {
+          uSheet.appendRow(rowData);
+        }
+        return responseJSON({ status: 'success', message: 'Đã lưu tài khoản người dùng vào Google Sheet!' });
+      }
+    }
+
+    // 2. Thêm từ vựng mới
     if (action === 'addCard' || action === 'addCards') {
       var cards = Array.isArray(contents.cards) ? contents.cards : [contents.card];
       var lessons = contents.lessons || getLessonsFromSheet(ss);
@@ -113,6 +194,7 @@ function doPost(e) {
       return responseJSON({ status: 'success', message: 'Đã thêm từ vựng mới thành công!', count: cards.length });
     }
 
+    // 3. Đồng bộ toàn bộ dữ liệu (Khóa học, Bài học, Từ vựng)
     if (action === 'syncAll') {
       var lessons = contents.lessons || [];
       var courses = contents.courses || [];
@@ -131,7 +213,7 @@ function doPost(e) {
 }
 
 /**
- * Hàm xử lý khi nhận request GET từ Web App
+ * Xử lý GET request từ Web App
  */
 function doGet(e) {
   try {
@@ -142,16 +224,42 @@ function doGet(e) {
       return responseJSON(setupSheetDatabase());
     }
 
+    if (action === 'getUsers') {
+      return responseJSON({ status: 'success', data: getUsersFromSheet(ss) });
+    }
+
     var data = {
       courses: getCoursesFromSheet(ss),
       lessons: getLessonsFromSheet(ss),
       cards: getCardsFromSheet(ss),
+      users: getUsersFromSheet(ss),
     };
 
     return responseJSON({ status: 'success', data: data });
   } catch (err) {
     return responseJSON({ status: 'error', message: err.toString() });
   }
+}
+
+function getUsersFromSheet(ss) {
+  var sheet = ss.getSheetByName(SHEET_USERS);
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+  var users = [];
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (!row[1]) continue;
+    users.push({
+      id: String(row[0] || ''),
+      username: String(row[1] || ''),
+      displayName: String(row[3] || row[1]),
+      role: String(row[4] || 'user'),
+      personalSheetUrl: String(row[5] || ''),
+      createdAt: row[6] ? new Date(row[6]).getTime() : Date.now()
+    });
+  }
+  return users;
 }
 
 function getOrCreateFormattedSheet(ss, sheetName, headers, bgColor) {
@@ -410,14 +518,21 @@ function responseJSON(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 
-export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({ isOpen, onClose, onRefreshData }) => {
+export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
+  isOpen,
+  onClose,
+  onRefreshData,
+  currentUser,
+}) => {
   const [webAppUrl, setWebAppUrl] = useState('');
   const [autoSync, setAutoSync] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'settings' | 'instructions' | 'code'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'users' | 'instructions' | 'code'>('settings');
   const [syncStatus, setSyncStatus] = useState<{ loading: boolean; success?: boolean; message?: string }>({
     loading: false,
   });
+
+  const registeredUsers = getAllUsers();
 
   useEffect(() => {
     const savedUrl = localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_WEBAPP_URL) || GOOGLE_SCRIPT_URL || '';
@@ -431,7 +546,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({ isOpen, onCl
   const handleSaveSettings = () => {
     localStorage.setItem(STORAGE_KEYS.GOOGLE_SHEET_WEBAPP_URL, webAppUrl.trim());
     localStorage.setItem(STORAGE_KEYS.GOOGLE_SHEET_AUTO_SYNC, String(autoSync));
-    alert('Đã lưu cấu hình Google Sheets thành công!');
+    alert('Đã lưu cấu hình Google Sheets Quản Trị thành công!');
   };
 
   const handleCopyCode = () => {
@@ -459,6 +574,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({ isOpen, onCl
 
       await fetch(webAppUrl.trim(), {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
         },
@@ -468,340 +584,353 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({ isOpen, onCl
       setSyncStatus({
         loading: false,
         success: true,
-        message: 'Đã gửi yêu cầu đồng bộ thành công! Kiểm tra trang tính Google Sheet của bạn.',
+        message: 'Đã gửi lệnh đồng bộ lên Google Sheets thành công! Dữ liệu đã được cập nhật.',
       });
     } catch (err: any) {
-      console.error('Push error:', err);
       setSyncStatus({
         loading: false,
         success: false,
-        message: 'Đồng bộ thất bại. Vui lòng kiểm tra lại URL Web App và cài đặt quyền "Anyone" trong Apps Script.',
+        message: 'Lỗi khi gửi dữ liệu: ' + (err?.message || 'Vui lòng kiểm tra lại URL Web App.'),
       });
     }
   };
 
-  // Pull data from Google Sheet to app
+  // Pull data from Google Sheet to Local Storage
   const handlePullFromSheet = async () => {
     if (!webAppUrl.trim()) {
       alert('Vui lòng nhập "URL Web App Google Apps Script" trước!');
       return;
     }
 
-    setSyncStatus({ loading: true, message: 'Đang tải dữ liệu từ Google Sheets về App...' });
+    setSyncStatus({ loading: true, message: 'Đang tải dữ liệu từ Google Sheets về ứng dụng...' });
 
     try {
-      const res = await fetch(webAppUrl.trim());
-      const data = await res.json();
+      const fetchUrl = webAppUrl.trim().includes('?')
+        ? `${webAppUrl.trim()}&action=getData`
+        : `${webAppUrl.trim()}?action=getData`;
 
-      if (data.status === 'success' && data.data) {
-        const { courses, lessons, cards } = data.data;
+      const res = await fetch(fetchUrl);
+      const json = await res.json();
 
-        if (courses && courses.length > 0) saveCourses(courses);
-        if (lessons && lessons.length > 0) saveLessons(lessons);
-        if (cards && cards.length > 0) saveCards(cards);
+      if (json.status === 'success' && json.data) {
+        if (json.data.courses && json.data.courses.length > 0) {
+          saveCourses(json.data.courses);
+        }
+        if (json.data.lessons && json.data.lessons.length > 0) {
+          saveLessons(json.data.lessons);
+        }
+        if (json.data.cards && json.data.cards.length > 0) {
+          saveCards(json.data.cards);
+        }
 
         onRefreshData();
         setSyncStatus({
           loading: false,
           success: true,
-          message: `Thành công! Đã tải về ${courses?.length || 0} khóa học, ${lessons?.length || 0} bài học, ${cards?.length || 0} từ vựng từ Google Sheet.`,
+          message: `Đã tải về thành công ${json.data.courses?.length || 0} khóa học, ${json.data.lessons?.length || 0} bài học và ${json.data.cards?.length || 0} từ vựng!`,
         });
       } else {
         setSyncStatus({
           loading: false,
           success: false,
-          message: data.message || 'Không thể lấy dữ liệu từ Google Sheets.',
+          message: json.message || 'Không thể lấy dữ liệu từ Google Sheets.',
         });
       }
     } catch (err: any) {
-      console.error('Pull error:', err);
       setSyncStatus({
         loading: false,
         success: false,
-        message: 'Lỗi tải dữ liệu. Hãy đảm bảo bạn đã triển khai Web App với quyền "Anyone" (Bất kỳ ai).',
+        message: 'Lỗi tải dữ liệu. Hãy đảm bảo bạn đã triển khai Apps Script với quyền truy cập "Bất kỳ ai (Anyone)".',
       });
     }
   };
 
-  // Trigger setup on Google Sheet to create sample tabs and headers
-  const handleSetupSheet = async () => {
-    if (!webAppUrl.trim()) {
-      alert('Vui lòng nhập "URL Web App Google Apps Script" trước!');
-      return;
-    }
-
-    setSyncStatus({ loading: true, message: 'Đang gửi yêu cầu khởi tạo Bảng tính Google Sheet mẫu (Setup)...' });
-
-    try {
-      const url = webAppUrl.trim() + (webAppUrl.includes('?') ? '&' : '?') + 'action=setup';
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.status === 'success' || data.message) {
-        setSyncStatus({
-          loading: false,
-          success: true,
-          message: data.message || 'Khởi tạo thành công các Trang tính Google Sheets mẫu!',
-        });
-      } else {
-        setSyncStatus({
-          loading: false,
-          success: false,
-          message: data.message || 'Không thể khởi tạo sheet mẫu. Kiểm tra lại script code.gs.',
-        });
-      }
-    } catch (err: any) {
-      console.error('Setup error:', err);
-      try {
-        await fetch(webAppUrl.trim(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'setup' }),
-        });
-        setSyncStatus({
-          loading: false,
-          success: true,
-          message: 'Đã gửi lệnh Setup thành công! Kiểm tra file Google Sheet của bạn.',
-        });
-      } catch (postErr) {
-        setSyncStatus({
-          loading: false,
-          success: false,
-          message: 'Lỗi khởi tạo sheet mẫu. Vui lòng kiểm tra lại URL Web App và quyền "Anyone".',
-        });
-      }
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 text-slate-800 space-y-6 my-8">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-2xl border border-emerald-200">
-              <FileSpreadsheet className="w-6 h-6" />
+    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+            <FileSpreadsheet className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md">
+                ❖ Quản Trị Hệ Thống
+              </span>
+              <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                👑 Admin: lannhi
+              </span>
             </div>
-            <div>
-              <h2 className="text-lg font-black text-slate-900">Kết Nối Google Sheets (code.gs)</h2>
-              <p className="text-xs text-slate-500">Tự động lưu và đồng bộ toàn bộ dữ liệu từ vựng với Google Sheet</p>
+            <h2 className="text-xl font-black text-slate-900">
+              Cơ Sở Dữ Liệu Google Sheets & Tài Khoản
+            </h2>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="grid grid-cols-4 p-1 bg-slate-100 rounded-2xl mb-6 font-semibold text-xs text-slate-600">
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className={`py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'settings' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'hover:text-slate-900'
+            }`}
+          >
+            1. Cấu Hình
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('users')}
+            className={`py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'users' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'hover:text-slate-900'
+            }`}
+          >
+            2. Tài Khoản ({registeredUsers.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('instructions')}
+            className={`py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'instructions' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'hover:text-slate-900'
+            }`}
+          >
+            3. Hướng Dẫn
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('code')}
+            className={`py-2 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'code' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'hover:text-slate-900'
+            }`}
+          >
+            4. Mã Code.gs
+          </button>
+        </div>
+
+        {/* Status Box */}
+        {syncStatus.message && (
+          <div
+            className={`mb-5 p-4 rounded-2xl border flex items-start gap-3 text-xs ${
+              syncStatus.loading
+                ? 'bg-blue-50 border-blue-200 text-blue-800'
+                : syncStatus.success
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}
+          >
+            {syncStatus.loading ? (
+              <RefreshCw className="w-4 h-4 text-blue-600 animate-spin shrink-0 mt-0.5" />
+            ) : syncStatus.success ? (
+              <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            )}
+            <div className="space-y-0.5">
+              <p className="font-bold">{syncStatus.message}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        )}
 
-        {/* Tab Selection */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            1. Cấu Hình Link Google Sheet
-          </button>
-          <button
-            onClick={() => setActiveTab('instructions')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'instructions'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            2. Hướng Dẫn Cài Đặt (Apps Script)
-          </button>
-          <button
-            onClick={() => setActiveTab('code')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'code'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            3. Mã Nguồn code.gs
-          </button>
-        </div>
-
-        {/* TAB 1: SETTINGS & SYNC */}
+        {/* Tab 1: Settings & Sync */}
         {activeTab === 'settings' && (
-          <div className="space-y-5 text-xs">
-            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-start gap-3 text-emerald-900">
-              <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-bold block mb-0.5">Khung mẫu code.gs đã được cập nhật sẵn!</strong>
-                <p className="text-emerald-800 text-[11px] leading-relaxed">
-                  Bằng cách dán URL Web App Google Apps Script bên dưới, mọi dữ liệu bạn tạo mới (Khóa học, Bài học, Từ vựng) có thể được lưu trực tiếp vào Google Sheet của bạn.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-bold text-slate-900 block text-xs">
-                URL Ứng Dụng Web Google Apps Script (Web App URL):
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-800">
+                URL Web App Google Apps Script (Quản Trị Viên)
               </label>
               <input
                 type="url"
                 value={webAppUrl}
                 onChange={(e) => setWebAppUrl(e.target.value)}
-                placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
+                placeholder="https://script.google.com/macros/s/.../exec"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
               <p className="text-[11px] text-slate-500">
-                Link này nhận được sau khi bạn nhấn <strong className="text-slate-800">Triển khai (Deploy) → Ứng dụng web (Web app)</strong> trong Google Apps Script.
+                Dán URL nhận được sau khi Deploy Web App từ Google Sheets của Lan Nhi.
               </p>
             </div>
 
-            <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
               <div>
-                <span className="font-bold text-slate-800 block">Tự động đồng bộ liên tục:</span>
-                <span className="text-[11px] text-slate-500">Tự gửi dữ liệu lên Google Sheets mỗi khi thêm/sửa từ vựng</span>
+                <h4 className="text-xs font-bold text-slate-800">Tự động đồng bộ khi thay đổi</h4>
+                <p className="text-[11px] text-slate-500">
+                  Tự động lưu lên Google Sheets mỗi khi thêm/sửa/xóa từ vựng
+                </p>
               </div>
-              <input
-                type="checkbox"
-                checked={autoSync}
-                onChange={(e) => setAutoSync(e.target.checked)}
-                className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-              />
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSync}
+                  onChange={(e) => setAutoSync(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
             </div>
 
-            <button
-              onClick={handleSaveSettings}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
-            >
-              Lưu Cấu Hình Link Google Sheet
-            </button>
-
-            {/* Sync Status Banner */}
-            {syncStatus.message && (
-              <div
-                className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-                  syncStatus.loading
-                    ? 'bg-amber-50 text-amber-800 border-amber-200'
-                    : syncStatus.success
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}
-              >
-                {syncStatus.loading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-amber-600 flex-shrink-0" />
-                ) : syncStatus.success ? (
-                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                )}
-                <span>{syncStatus.message}</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="flex flex-wrap gap-3 pt-2">
               <button
-                onClick={handleSetupSheet}
-                disabled={syncStatus.loading}
-                className="py-3 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                type="button"
+                onClick={handleSaveSettings}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer active:scale-95"
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>Khởi Tạo Sheet Mẫu</span>
+                Lưu Cấu Hình
               </button>
 
               <button
+                type="button"
                 onClick={handlePushToSheet}
                 disabled={syncStatus.loading}
-                className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 <Upload className="w-4 h-4" />
-                <span>Đồng Bộ Lên Sheet</span>
+                <span>Gửi Lên Sheet Quản Trị</span>
               </button>
 
               <button
+                type="button"
                 onClick={handlePullFromSheet}
                 disabled={syncStatus.loading}
-                className="py-3 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                <span>Tải Dữ Liệu Về App</span>
+                <span>Tải Từ Sheet Về Máy</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* TAB 2: INSTRUCTIONS */}
+        {/* Tab 2: Users Management */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs text-blue-900">
+              <span className="font-semibold">
+                Tổng số tài khoản đã đăng ký: <strong>{registeredUsers.length}</strong>
+              </span>
+              <span className="text-[11px] text-blue-700">Tự động đồng bộ vào sheet <strong>TaiKhoan</strong></span>
+            </div>
+
+            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Tài Khoản</th>
+                    <th className="p-3">Tên Hiển Thị</th>
+                    <th className="p-3">Vai Trò</th>
+                    <th className="p-3">Mật Khẩu</th>
+                    <th className="p-3">Google Sheet Cá Nhân</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {registeredUsers.map((u) => (
+                    <tr key={u.id} className={u.username === 'lannhi' ? 'bg-amber-50/50 font-semibold' : ''}>
+                      <td className="p-3 font-mono font-bold text-indigo-600">{u.username}</td>
+                      <td className="p-3">{u.displayName || '-'}</td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            u.role === 'admin'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {u.role === 'admin' ? 'Quản Trị' : 'Học Viên'}
+                        </span>
+                      </td>
+                      <td className="p-3 font-mono text-slate-500">
+                        {u.username === 'lannhi' ? '123456' : '••••••'}
+                      </td>
+                      <td className="p-3 text-[11px] text-slate-400">
+                        {u.personalSheetUrl ? (
+                          <span className="text-emerald-600 font-semibold">Đã kết nối</span>
+                        ) : (
+                          'Chưa liên kết'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Instructions */}
         {activeTab === 'instructions' && (
           <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-              <HelpCircle className="w-4 h-4 text-emerald-600" />
-              Các bước cài đặt file code.gs vào Google Sheets:
-            </h3>
-
-            <ol className="list-decimal list-inside space-y-3 font-medium bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <li>
-                Mở một trang tính <strong>Google Sheet</strong> mới hoặc sẵn có trên tài khoản Google của bạn.
-              </li>
-              <li>
-                Trên thanh Menu hàng trên, bấm: <strong>Mở rộng (Extensions) → Apps Script</strong>.
-              </li>
-              <li>
-                Xóa sạch các dòng mã mặc định <code>function myFunction()</code> trong Apps Script.
-              </li>
-              <li>
-                Chuyển qua tab <strong>3. Mã Nguồn code.gs</strong> trong modal này, bấm nút <strong>"Sao Chép Mã code.gs"</strong> và DÁN vào cửa sổ Apps Script.
-              </li>
-              <li>
-                Bấm biểu tượng <strong>Cái đĩa (Save / Ctrl + S)</strong> để lưu lại dự án.
-              </li>
-              <li>
-                Bấm nút góc trên bên phải: <strong>Triển khai (Deploy) → Triển khai dưới dạng ứng dụng web (New deployment)</strong>.
-              </li>
-              <li className="bg-amber-100/70 p-2.5 rounded-xl text-amber-900 font-bold border border-amber-300/80">
-                ⚠️ CHÚ Ý QUAN TRỌNG:
-                <br />- Thực thi dưới dạng (Execute as): <strong>Tôi (Me)</strong>
-                <br />- Ai có quyền truy cập (Who has access): <strong>Bất kỳ ai (Anyone)</strong>
-              </li>
-              <li>
-                Bấm <strong>Triển khai (Deploy)</strong>, chấp nhận cấp quyền cho Google tài khoản của bạn.
-              </li>
-              <li>
-                Sao chép <strong>URL ứng dụng web (Web App URL)</strong> và dán vào Tab 1 của modal này!
-              </li>
-            </ol>
+            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl space-y-2">
+              <h4 className="font-bold text-indigo-900 flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-indigo-600" />
+                Hướng dẫn thiết lập Google Sheets cho Lan Nhi (Admin):
+              </h4>
+              <ol className="list-decimal pl-5 space-y-1.5 text-indigo-950">
+                <li>
+                  Tạo 1 Google Sheet mới trên tài khoản Google của Lan Nhi.
+                </li>
+                <li>
+                  Chọn <strong>Tiện ích mở rộng (Extensions) ➔ Apps Script</strong>.
+                </li>
+                <li>
+                  Xóa toàn bộ mã cũ và dán toàn bộ mã ở tab <strong>4. Mã Code.gs</strong> vào.
+                </li>
+                <li>
+                  Chọn hàm <code>setup</code> trên thanh công cụ và bấm <strong>Run (Chạy)</strong> để tự động tạo 3 sheet (TaiKhoan, KhoaHoc, BaiHoc, TuVung_Chung).
+                </li>
+                <li>
+                  Bấm <strong>Deploy (Triển khai) ➔ New deployment ➔ Loại Web app</strong>.
+                  <br />
+                  <span className="text-[11px] text-indigo-700">
+                    * Quyền thực thi: <strong>Me (Tôi)</strong>.
+                    <br />
+                    * Ai có quyền truy cập: <strong>Anyone (Bất kỳ ai)</strong>.
+                  </span>
+                </li>
+                <li>
+                  Sao chép URL Web App và dán vào tab <strong>1. Cấu Hình</strong> của ứng dụng!
+                </li>
+              </ol>
+            </div>
           </div>
         )}
 
-        {/* TAB 3: CODE VIEW */}
+        {/* Tab 4: Code */}
         {activeTab === 'code' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Mã nguồn file code.gs (Tự động lưu & phân loại trang tính):</span>
+              <span className="text-xs font-bold text-slate-700">
+                Mã nguồn Code.gs (Đầy đủ quản lý Tài Khoản & Từ Vựng)
+              </span>
               <button
+                type="button"
                 onClick={handleCopyCode}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{isCopied ? 'Đã Sao Chép!' : 'Sao Chép Mã code.gs'}</span>
+                {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{isCopied ? 'Đã Sao Chép!' : 'Sao Chép Toàn Bộ Mã'}</span>
               </button>
             </div>
 
-            <div className="relative max-h-80 overflow-y-auto bg-slate-950 text-slate-200 p-4 rounded-2xl text-[11px] font-mono border border-slate-800">
-              <pre>{CODE_GS_SCRIPT}</pre>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              * File <code>code.gs</code> cũng đã được lưu sẵn tại thư mục gốc dự án của bạn (<code>/code.gs</code>) và thư mục <code>/public/code.gs</code>.
-            </p>
+            <pre className="p-4 bg-slate-900 text-slate-200 rounded-2xl text-[11px] font-mono h-64 overflow-y-auto leading-relaxed">
+              <code>{CODE_GS_SCRIPT}</code>
+            </pre>
           </div>
         )}
 
         {/* Footer */}
-        <div className="border-t border-slate-100 pt-3 flex justify-end">
+        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span>Tài khoản Admin: <strong>lannhi</strong> (Mật khẩu: 123456)</span>
           <button
             onClick={onClose}
-            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer"
           >
             Đóng
           </button>

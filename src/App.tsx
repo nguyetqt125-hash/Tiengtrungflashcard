@@ -30,8 +30,18 @@ import { MatchingGame } from './components/MatchingGame';
 import { TestMode } from './components/TestMode';
 import { HanziWorksheetModal } from './components/HanziWorksheetModal';
 import { OnboardingTour } from './components/OnboardingTour';
+import { AuthModal } from './components/AuthModal';
+import { PersonalSheetModal } from './components/PersonalSheetModal';
+import { User } from './types';
+import { getCurrentUser, setCurrentUser, logoutUser } from './utils/auth';
 
 export default function App() {
+  // Current logged in user
+  const [currentUser, setCurrentUserState] = useState<User | null>(() => getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [isPersonalSheetModalOpen, setIsPersonalSheetModalOpen] = useState(false);
+
   // Navigation View State: 'courses' | 'lessons'
   const [currentView, setCurrentView] = useState<'courses' | 'lessons'>('courses');
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
@@ -205,6 +215,7 @@ export default function App() {
         currentCourseName={currentCourse?.name}
         currentLessonId={currentLessonId}
         currentLessonName={currentLesson?.name}
+        currentUser={currentUser}
         onNavigateHome={handleNavigateHome}
         onNavigateCourse={(id) => handleSelectCourse(id)}
         onOpenAddCourse={() => {
@@ -212,8 +223,17 @@ export default function App() {
           setIsCourseModalOpen(true);
         }}
         onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
+        onOpenPersonalSheet={() => setIsPersonalSheetModalOpen(true)}
         onOpenWorksheet={() => setIsWorksheetOpen(true)}
         onOpenTour={() => setIsTourOpen(true)}
+        onOpenAuth={(mode) => {
+          setAuthModalMode(mode);
+          setIsAuthModalOpen(true);
+        }}
+        onLogout={() => {
+          logoutUser();
+          setCurrentUserState(null);
+        }}
       />
 
       {/* Main View Container */}
@@ -384,11 +404,34 @@ export default function App() {
         onImport={handleImportBatchCards}
       />
 
-      {/* Google Sheets Sync Modal */}
+      {/* Google Sheets Sync Modal (Master / Admin) */}
       <GoogleSheetModal
         isOpen={isGoogleSheetsModalOpen}
         onClose={() => setIsGoogleSheetsModalOpen(false)}
         onRefreshData={reloadData}
+        currentUser={currentUser}
+      />
+
+      {/* Personal Google Sheet Modal (Regular Users / Students) */}
+      {currentUser && (
+        <PersonalSheetModal
+          isOpen={isPersonalSheetModalOpen}
+          onClose={() => setIsPersonalSheetModalOpen(false)}
+          currentUser={currentUser}
+          onUserUpdate={(updated) => setCurrentUserState(updated)}
+          onRefreshData={reloadData}
+        />
+      )}
+
+      {/* User Login & Registration Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUserState(user);
+          reloadData();
+        }}
       />
 
       {/* SRS Repetition Modal */}
