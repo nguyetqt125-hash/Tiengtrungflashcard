@@ -1,5 +1,6 @@
 import { GOOGLE_SCRIPT_URL, STORAGE_KEYS } from '../constants';
 import { getCourses, getLessons, getCards } from './storage';
+import { getAllUsers } from './auth';
 
 export const getGoogleSheetUrl = (): string => {
   if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.trim().length > 0) {
@@ -24,6 +25,7 @@ export const triggerAutoSync = () => {
         courses: getCourses(),
         lessons: getLessons(),
         cards: getCards(),
+        users: getAllUsers(),
       };
 
       await fetch(url.trim(), {

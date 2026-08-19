@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, GraduationCap, Plus, Edit3, Trash2, ArrowRight, FileSpreadsheet, Flame, Brain, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Course, Lesson, Flashcard } from '../types';
+import {
+  BookOpen,
+  GraduationCap,
+  Plus,
+  Edit3,
+  Trash2,
+  ArrowRight,
+  FileSpreadsheet,
+  Flame,
+  Brain,
+  CheckCircle2,
+  AlertCircle,
+  Lock,
+  ShieldCheck,
+  User as UserIcon,
+} from 'lucide-react';
+import { Course, Lesson, Flashcard, User } from '../types';
 import { getStreakInfo, getSrsStats, getCourseSrsStats } from '../utils/srs';
+import { canEditCourse, isAdmin } from '../utils/auth';
 
 interface CourseListProps {
   courses: Course[];
   lessons: Lesson[];
   cards: Flashcard[];
+  currentUser?: User | null;
   onSelectCourse: (courseId: string) => void;
   onAddCourse: () => void;
   onEditCourse: (course: Course) => void;
@@ -21,6 +38,7 @@ export const CourseList: React.FC<CourseListProps> = ({
   courses,
   lessons,
   cards,
+  currentUser,
   onSelectCourse,
   onAddCourse,
   onEditCourse,
@@ -217,6 +235,8 @@ export const CourseList: React.FC<CourseListProps> = ({
               const lessonIds = courseLessons.map((l) => l.id);
               const courseCards = cards.filter((card) => lessonIds.includes(card.lessonId));
               const courseSrs = getCourseSrsStats(cards, lessons, course.id);
+              const isEditable = canEditCourse(course, currentUser);
+              const isSys = course.isSystem || course.authorId === 'admin-lannhi' || course.authorUsername === 'lannhi';
 
               return (
                 <div
@@ -226,32 +246,50 @@ export const CourseList: React.FC<CourseListProps> = ({
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-100">
-                        {course.level || 'HSK'}
-                      </span>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditCourse(course);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-                          title="Sửa khóa học"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteCourse(course);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
-                          title="Xóa khóa học"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-100">
+                          {course.level || 'HSK'}
+                        </span>
+                        {isSys ? (
+                          <span
+                            className="px-2 py-0.5 bg-slate-100 text-slate-600 font-medium text-[10px] rounded-md border border-slate-200 flex items-center gap-1"
+                            title="Khóa học chuẩn của hệ thống (Chỉ đọc với học viên)"
+                          >
+                            <Lock className="w-2.5 h-2.5 text-slate-400" />
+                            <span>Khóa học chuẩn</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-medium text-[10px] rounded-md border border-emerald-200 flex items-center gap-1">
+                            <UserIcon className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>Cá nhân</span>
+                          </span>
+                        )}
                       </div>
+
+                      {isEditable && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditCourse(course);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="Sửa khóa học"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteCourse(course);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            title="Xóa khóa học"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-1">
@@ -289,18 +327,20 @@ export const CourseList: React.FC<CourseListProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onAddLesson(course.id)}
-                        className="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
-                      >
-                        + Bài Học
-                      </button>
+                      {isEditable && (
+                        <button
+                          onClick={() => onAddLesson(course.id)}
+                          className="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                        >
+                          + Bài Học
+                        </button>
+                      )}
 
                       <button
                         onClick={() => onSelectCourse(course.id)}
                         className="flex-1 py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <span>Xem Bài Học</span>
+                        <span>Vào Học & Ôn Tập</span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>

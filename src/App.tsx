@@ -31,6 +31,7 @@ import { TestMode } from './components/TestMode';
 import { HanziWorksheetModal } from './components/HanziWorksheetModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './components/AuthPage';
 import { PersonalSheetModal } from './components/PersonalSheetModal';
 import { User } from './types';
 import { getCurrentUser, setCurrentUser, logoutUser } from './utils/auth';
@@ -42,8 +43,8 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [isPersonalSheetModalOpen, setIsPersonalSheetModalOpen] = useState(false);
 
-  // Navigation View State: 'courses' | 'lessons'
-  const [currentView, setCurrentView] = useState<'courses' | 'lessons'>('courses');
+  // Navigation View State: 'courses' | 'lessons' | 'auth'
+  const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('courses');
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
 
@@ -228,21 +229,37 @@ export default function App() {
         onOpenTour={() => setIsTourOpen(true)}
         onOpenAuth={(mode) => {
           setAuthModalMode(mode);
-          setIsAuthModalOpen(true);
+          setCurrentView('auth');
         }}
         onLogout={() => {
           logoutUser();
           setCurrentUserState(null);
+          reloadData();
         }}
       />
 
       {/* Main View Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {currentView === 'auth' && (
+          <AuthPage
+            initialMode={authModalMode}
+            onLoginSuccess={(user) => {
+              setCurrentUserState(user);
+              reloadData();
+              setCurrentView('courses');
+            }}
+            onContinueAsGuest={() => {
+              setCurrentView('courses');
+            }}
+          />
+        )}
+
         {currentView === 'courses' && (
           <CourseList
             courses={courses}
             lessons={lessons}
             cards={cards}
+            currentUser={currentUser}
             onSelectCourse={handleSelectCourse}
             onAddCourse={() => {
               setCourseToEdit(null);
@@ -273,6 +290,7 @@ export default function App() {
             lessons={lessons}
             cards={cards}
             selectedLessonId={currentLessonId}
+            currentUser={currentUser}
             onSelectLesson={(lessonId) => setCurrentLessonId(lessonId)}
             onBackToCourseList={handleNavigateHome}
             onAddLesson={(courseId) => {

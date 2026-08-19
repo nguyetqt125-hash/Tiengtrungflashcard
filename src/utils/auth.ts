@@ -1,11 +1,11 @@
-import { User, UserAccountRecord } from '../types';
+import { User, UserAccountRecord, Course, Lesson, Flashcard } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { getGoogleSheetUrl } from './googleSheetSync';
 
-const USERS_STORAGE_KEY = 'han_ngu_user_accounts_v1';
-const CURRENT_USER_KEY = 'han_ngu_active_user_v1';
+const USERS_STORAGE_KEY = 'han_ngu_user_accounts_v2';
+const CURRENT_USER_KEY = 'han_ngu_active_user_v2';
 
-// Default Admin account
+// Private Admin account definition
 export const DEFAULT_ADMIN: UserAccountRecord = {
   id: 'admin-lannhi',
   username: 'lannhi',
@@ -25,7 +25,7 @@ export const initializeAuth = (): UserAccountRecord[] => {
       return initialUsers;
     }
     const parsed: UserAccountRecord[] = JSON.parse(raw);
-    // Ensure admin lannhi always exists
+    // Ensure admin lannhi always exists in database
     if (!parsed.some((u) => u.username.toLowerCase() === 'lannhi')) {
       parsed.unshift(DEFAULT_ADMIN);
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(parsed));
@@ -41,23 +41,14 @@ export const getAllUsers = (): UserAccountRecord[] => {
   return initializeAuth();
 };
 
-// Get current active user
+// Get current active user (null if not logged in)
 export const getCurrentUser = (): User | null => {
   try {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (raw) {
       return JSON.parse(raw);
     }
-    // Default to admin lannhi if not logged in
-    const defaultUser: User = {
-      id: DEFAULT_ADMIN.id,
-      username: DEFAULT_ADMIN.username,
-      displayName: DEFAULT_ADMIN.displayName,
-      role: DEFAULT_ADMIN.role,
-      createdAt: DEFAULT_ADMIN.createdAt,
-    };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(defaultUser));
-    return defaultUser;
+    return null;
   } catch (e) {
     return null;
   }
@@ -70,6 +61,41 @@ export const setCurrentUser = (user: User | null) => {
   } else {
     localStorage.removeItem(CURRENT_USER_KEY);
   }
+};
+
+// Check if user is admin
+export const isAdmin = (user?: User | null): boolean => {
+  if (!user) return false;
+  return user.role === 'admin' || user.username.toLowerCase() === 'lannhi';
+};
+
+// Check if a course can be edited/deleted by user
+export const canEditCourse = (course?: Course | null, user?: User | null): boolean => {
+  if (!course) return false;
+  if (isAdmin(user)) return true;
+  // If it's a system course or authored by Lan Nhi, regular users cannot edit or delete it
+  if (course.isSystem || course.authorId === 'admin-lannhi' || course.authorUsername === 'lannhi') {
+    return false;
+  }
+  // If user is logged in and is the author
+  if (user && (course.authorId === user.id || course.authorUsername === user.username)) {
+    return true;
+  }
+  return false;
+};
+
+// Check if a lesson can be edited/deleted by user
+export const canEditLesson = (course?: Course | null, lesson?: Lesson | null, user?: User | null): boolean => {
+  if (!course || !lesson) return false;
+  if (isAdmin(user)) return true;
+  // If parent course is system course or lesson is marked system
+  if (course.isSystem || course.authorId === 'admin-lannhi' || lesson.isSystem || lesson.authorId === 'admin-lannhi') {
+    return false;
+  }
+  if (user && (lesson.authorId === user.id || course.authorId === user.id)) {
+    return true;
+  }
+  return false;
 };
 
 // Register a new user
@@ -93,12 +119,13 @@ export const registerUser = async (
     return { success: false, message: `Tên tài khoản "${cleanUsername}" đã tồn tại. Vui lòng chọn tên khác hoặc đăng nhập.` };
   }
 
+  const isNewAdmin = cleanUsername === 'lannhi';
   const newUserRecord: UserAccountRecord = {
-    id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    id: isNewAdmin ? DEFAULT_ADMIN.id : 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     username: cleanUsername,
     password: cleanPassword,
     displayName: displayName?.trim() || cleanUsername,
-    role: cleanUsername === 'lannhi' ? 'admin' : 'user',
+    role: isNewAdmin ? 'admin' : 'user',
     createdAt: Date.now(),
   };
 
@@ -137,7 +164,7 @@ export const registerUser = async (
       }).catch((e) => console.warn('Lỗi ghi user vào Google Sheet:', e));
     }
   } catch (e) {
-    // Ignore network error in background
+    // Ignore network errors in background
   }
 
   return { success: true, message: 'Đăng ký tài khoản thành công!', user: newUser };
@@ -151,7 +178,7 @@ export const loginUser = async (
   const cleanUsername = username.trim().toLowerCase();
   const cleanPassword = password.trim();
 
-  // Special check for Admin lannhi
+  // Admin lannhi verification
   if (cleanUsername === 'lannhi' && cleanPassword === '123456') {
     const adminUser: User = {
       id: DEFAULT_ADMIN.id,
@@ -160,9 +187,10 @@ export const loginUser = async (
       role: 'admin',
       createdAt: DEFAULT_ADMIN.createdAt,
       googleSheetUrl: localStorage.getItem(STORAGE_KEYS.GOOGLE_SHEET_WEBAPP_URL) || '',
+      isGoogleConnected: true,
     };
     setCurrentUser(adminUser);
-    return { success: true, message: 'Đăng nhập Quản Trị Viên (lannhi) thành công!', user: adminUser };
+    return { success: true, message: 'Đăng nhập Quản Trị Viên thành công!', user: adminUser };
   }
 
   const users = getAllUsers();
@@ -201,7 +229,6 @@ export const updatePersonalGoogleSheet = (user: User, sheetUrl: string, googleEm
 
   setCurrentUser(updatedUser);
 
-  // Update in accounts array
   const users = getAllUsers();
   const userIdx = users.findIndex((u) => u.id === user.id || u.username.toLowerCase() === user.username.toLowerCase());
   if (userIdx >= 0) {
@@ -214,6 +241,5 @@ export const updatePersonalGoogleSheet = (user: User, sheetUrl: string, googleEm
 
 // Logout
 export const logoutUser = () => {
-  // Set back to guest or null
   localStorage.removeItem(CURRENT_USER_KEY);
 };

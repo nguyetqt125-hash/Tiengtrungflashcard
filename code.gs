@@ -1,17 +1,40 @@
 /**
- * GOOGLE APPS SCRIPT CODE
- * Copy toàn bộ nội dung file này vào editor tại script.google.com
+ * GOOGLE APPS SCRIPT CODE - HỆ THỐNG QUẢN TRỊ TOÀN DIỆN
+ * Bao gồm: Quản lý Tài khoản người dùng (TaiKhoan), Khóa học (KhoaHoc), Bài học (BaiHoc), và Từ vựng (TuVung theo từng khóa)
+ * 
+ * HƯỚNG DẪN CÀI ĐẶT:
+ * 1. Mở file Google Sheet Quản Trị của bạn trên Google Drive.
+ * 2. Chọn Tiện ích mở rộng (Extensions) -> Apps Script.
+ * 3. Xóa toàn bộ mã cũ và dán toàn bộ nội dung file này vào editor.
+ * 4. Nhấn Lưu (Ctrl + S), chọn hàm 'setup' ở thanh công cụ và nhấn 'Chạy' (Run) để tự động tạo tất cả các Sheet mẫu.
+ * 5. Nhấn 'Triển khai' (Deploy) -> 'Tùy chọn triển khai mới' (New Deployment) -> chọn loại 'Ứng dụng web' (Web app).
+ * 6. Mục 'Người có quyền truy cập' (Who has access) chọn 'Bất kỳ ai' (Anyone).
+ * 7. Sao chép URL Web App và dán vào ứng dụng Flashcard.
  */
 
-// CẤU HÌNH TÊN SHEET VÀ HEADERS (ĐẦY ĐỦ CÁC CỘT DỮ LIỆU APPS)
+// CẤU HÌNH TÊN CÁC TRANG TÍNH (SHEETS)
+const SHEET_USERS = "TaiKhoan";
 const SHEET_COURSES = "KhoaHoc";
 const SHEET_LESSONS = "BaiHoc";
+
+// TIÊU ĐỀ CÁC CỘT (HEADERS) ĐẦY ĐỦ
+const USER_HEADERS = [
+  "ID Người Dùng",
+  "Tên Đăng Nhập",
+  "Mật Khẩu",
+  "Tên Hiển Thị",
+  "Vai Trò (Role)",
+  "Link Google Sheet Cá Nhân",
+  "Ngày Tạo"
+];
 
 const COURSE_HEADERS = [
   "ID Khóa Học",
   "Tên Khóa Học",
   "Mô Tả",
   "Cấp Độ HSK",
+  "Tác Giả (Author ID)",
+  "Khóa Chuẩn (isSystem)",
   "Ngày Tạo"
 ];
 
@@ -20,6 +43,7 @@ const LESSON_HEADERS = [
   "ID Khóa Học",
   "Tên Bài Học",
   "Mô Tả",
+  "Tác Giả (Author ID)",
   "Ngày Tạo"
 ];
 
@@ -46,10 +70,26 @@ function setup() {
 function setupSheetDatabase() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
+  // 1. Khởi tạo bảng Quản lý Tài Khoản Người Dùng
+  var userSheet = getOrCreateFormattedSheet(ss, SHEET_USERS, USER_HEADERS, "#0284c7");
+  // Thêm tài khoản quản trị lannhi mặc định nếu sheet mới tinh
+  if (userSheet.getLastRow() <= 1) {
+    userSheet.appendRow([
+      "admin-lannhi",
+      "lannhi",
+      "123456",
+      "Lan Nhi (Quản Trị Viên)",
+      "admin",
+      "",
+      new Date().toLocaleString("vi-VN")
+    ]);
+  }
+
+  // 2. Khởi tạo bảng Khóa Học & Bài Học
   getOrCreateFormattedSheet(ss, SHEET_COURSES, COURSE_HEADERS, "#047857");
   getOrCreateFormattedSheet(ss, SHEET_LESSONS, LESSON_HEADERS, "#9a3412");
 
-  // Kiểm tra nếu chưa có sheet từ vựng nào, tạo mặc định TuVung_Chung
+  // 3. Kiểm tra và khởi tạo sheet Từ Vựng mặc định nếu chưa có
   var sheets = ss.getSheets();
   var hasVocabSheet = false;
   for (var i = 0; i < sheets.length; i++) {
@@ -63,12 +103,16 @@ function setupSheetDatabase() {
     getOrCreateFormattedSheet(ss, "TuVung_Chung", CARD_HEADERS, "#4338ca");
   }
 
+  // 4. Xóa Sheet1 mặc định nếu đã có các sheet chức năng
   var defaultSheet = ss.getSheetByName("Trang tính1") || ss.getSheetByName("Sheet1");
   if (defaultSheet && ss.getSheets().length > 1) {
     try { ss.deleteSheet(defaultSheet); } catch (e) {}
   }
 
-  return { status: "success", message: "Khởi tạo thành công các trang tính Google Sheets (Khóa học, Bài học, Từ vựng phân theo từng khóa học)!" };
+  return {
+    status: "success",
+    message: "Khởi tạo thành công toàn bộ hệ thống Sheets (TaiKhoan, KhoaHoc, BaiHoc, và TuVung phân theo khóa học)!"
+  };
 }
 
 function sanitizeSheetName(name) {
@@ -94,6 +138,40 @@ function doPost(e) {
       return responseJSON(setupSheetDatabase());
     }
 
+    // 1. Đăng ký / Lưu thông tin tài khoản người dùng
+    if (action === 'registerUser' || action === 'saveUser') {
+      var user = contents.user;
+      if (user && user.username) {
+        var uSheet = getOrCreateFormattedSheet(ss, SHEET_USERS, USER_HEADERS, "#0284c7");
+        var values = uSheet.getDataRange().getValues();
+        var existingRowIndex = -1;
+        for (var r = 1; r < values.length; r++) {
+          if (String(values[r][1]).toLowerCase() === String(user.username).toLowerCase()) {
+            existingRowIndex = r + 1;
+            break;
+          }
+        }
+
+        var rowData = [
+          user.id || ('usr_' + Date.now()),
+          user.username,
+          user.password || '',
+          user.displayName || user.username,
+          user.role || 'user',
+          user.personalSheetUrl || user.googleSheetUrl || '',
+          user.createdAt ? new Date(user.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')
+        ];
+
+        if (existingRowIndex > 0) {
+          uSheet.getRange(existingRowIndex, 1, 1, rowData.length).setValues([rowData]);
+        } else {
+          uSheet.appendRow(rowData);
+        }
+        return responseJSON({ status: 'success', message: 'Đã lưu tài khoản người dùng vào Google Sheet TaiKhoan!' });
+      }
+    }
+
+    // 2. Thêm từ vựng mới
     if (action === 'addCard' || action === 'addCards') {
       var cards = Array.isArray(contents.cards) ? contents.cards : [contents.card];
       var lessons = contents.lessons || getLessonsFromSheet(ss);
@@ -102,13 +180,21 @@ function doPost(e) {
       return responseJSON({ status: 'success', message: 'Đã thêm từ vựng mới thành công!', count: cards.length });
     }
 
+    // 3. Đồng bộ toàn bộ dữ liệu (Khóa học, Bài học, Từ vựng, Tài khoản)
     if (action === 'syncAll') {
       var lessons = contents.lessons || [];
       var courses = contents.courses || [];
       if (contents.courses) syncCoursesToSheet(ss, courses);
       if (contents.lessons) syncLessonsToSheet(ss, lessons);
       if (contents.cards) syncCardsToSheet(ss, contents.cards, lessons, courses);
+      if (contents.users && Array.isArray(contents.users)) syncUsersToSheet(ss, contents.users);
       return responseJSON({ status: 'success', message: 'Đồng bộ toàn bộ dữ liệu lên Google Sheets thành công!' });
+    }
+
+    // 4. Đồng bộ danh sách tài khoản
+    if (action === 'syncUsers' && contents.users) {
+      syncUsersToSheet(ss, contents.users);
+      return responseJSON({ status: 'success', message: 'Đồng bộ danh sách người dùng thành công!' });
     }
 
     return responseJSON({ status: 'error', message: 'Hành động không hợp lệ: ' + action });
@@ -131,10 +217,15 @@ function doGet(e) {
       return responseJSON(setupSheetDatabase());
     }
 
+    if (action === 'getUsers') {
+      return responseJSON({ status: 'success', data: getUsersFromSheet(ss) });
+    }
+
     var data = {
       courses: getCoursesFromSheet(ss),
       lessons: getLessonsFromSheet(ss),
       cards: getCardsFromSheet(ss),
+      users: getUsersFromSheet(ss),
     };
 
     return responseJSON({ status: 'success', data: data });
@@ -168,6 +259,45 @@ function getOrCreateFormattedSheet(ss, sheetName, headers, bgColor) {
   }
 
   return sheet;
+}
+
+function syncUsersToSheet(ss, users) {
+  var sheet = ss.getSheetByName(SHEET_USERS);
+  if (sheet) sheet.clear();
+  sheet = getOrCreateFormattedSheet(ss, SHEET_USERS, USER_HEADERS, "#0284c7");
+  (users || []).forEach(function(u) {
+    sheet.appendRow([
+      u.id || ('usr_' + Date.now()),
+      u.username || '',
+      u.password || '',
+      u.displayName || u.username || '',
+      u.role || 'user',
+      u.personalSheetUrl || u.googleSheetUrl || '',
+      u.createdAt ? new Date(u.createdAt).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')
+    ]);
+  });
+}
+
+function getUsersFromSheet(ss) {
+  var sheet = ss.getSheetByName(SHEET_USERS);
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+  var users = [];
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (!row[1]) continue;
+    users.push({
+      id: String(row[0] || ''),
+      username: String(row[1] || ''),
+      password: String(row[2] || ''),
+      displayName: String(row[3] || row[1]),
+      role: String(row[4] || 'user'),
+      personalSheetUrl: String(row[5] || ''),
+      createdAt: row[6] ? new Date(row[6]).getTime() : Date.now()
+    });
+  }
+  return users;
 }
 
 function buildLessonAndCourseMaps(lessons, courses) {
@@ -340,7 +470,8 @@ function syncLessonsToSheet(ss, lessons) {
       l.id, 
       l.courseId, 
       l.name, 
-      l.description || '', 
+      l.description || '',
+      l.authorId || '',
       l.createdAt ? new Date(l.createdAt).toLocaleString('vi-VN') : ''
     ]);
   });
@@ -360,7 +491,8 @@ function getLessonsFromSheet(ss) {
       courseId: String(row[1]),
       name: String(row[2]),
       description: String(row[3] || ''),
-      createdAt: row[4] ? new Date(row[4]).getTime() : Date.now(),
+      authorId: String(row[4] || ''),
+      createdAt: row[5] ? new Date(row[5]).getTime() : Date.now(),
     });
   }
   return lessons;
@@ -375,7 +507,9 @@ function syncCoursesToSheet(ss, courses) {
       c.id, 
       c.name, 
       c.description || '', 
-      c.level || '', 
+      c.level || '',
+      c.authorId || '',
+      c.isSystem ? 'true' : 'false',
       c.createdAt ? new Date(c.createdAt).toLocaleString('vi-VN') : ''
     ]);
   });
@@ -395,7 +529,9 @@ function getCoursesFromSheet(ss) {
       name: String(row[1]),
       description: String(row[2] || ''),
       level: String(row[3] || ''),
-      createdAt: row[4] ? new Date(row[4]).getTime() : Date.now(),
+      authorId: String(row[4] || ''),
+      isSystem: String(row[5]).toLowerCase() === 'true',
+      createdAt: row[6] ? new Date(row[6]).getTime() : Date.now(),
     });
   }
   return courses;

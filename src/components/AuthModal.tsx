@@ -126,26 +126,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* Quick Admin Demo Button */}
-        {mode === 'login' && (
-          <div className="mb-5 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-              <div className="text-xs">
-                <p className="font-bold text-amber-900">Tài khoản Quản Trị:</p>
-                <p className="text-amber-700 font-mono text-[11px]">lannhi • 123456</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={fillAdminCredentials}
-              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer shrink-0"
-            >
-              Điền Nhanh
-            </button>
-          </div>
-        )}
-
         {/* Alerts */}
         {error && (
           <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">

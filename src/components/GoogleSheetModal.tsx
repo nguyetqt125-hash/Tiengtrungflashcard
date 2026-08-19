@@ -570,6 +570,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
         courses: getCourses(),
         lessons: getLessons(),
         cards: getCards(),
+        users: getAllUsers(),
       };
 
       await fetch(webAppUrl.trim(), {

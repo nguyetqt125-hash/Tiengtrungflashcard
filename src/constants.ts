@@ -2,7 +2,7 @@
 // Bước 1: Deploy Google Apps Script.
 // Bước 2: Copy URL "Web App URL" (kết thúc bằng /exec).
 // Bước 3: Dán vào biến bên dưới.
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4IsgtF243-gW4yKTFgf82ipuI60QBRKF0hiYOFVTxvBh079eRynvm5r15gCUeBGqBgg/exec";
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXEX5C7Bh_uASM8YmaAUPg0bFd-q2sUsdmI6qSP1YHnTMsTFkGejVKgzNJAY4JzZC8iA/exec";
 
 export const STORAGE_KEYS = {
   COURSES: 'hsk_app_courses_v1',

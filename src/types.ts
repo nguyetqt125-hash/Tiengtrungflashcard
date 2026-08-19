@@ -9,6 +9,8 @@ export interface Flashcard {
   synonyms?: string;     // 6. Từ đồng nghĩa (nếu có) (e.g. 研习, 学)
   memoryTip?: string;    // 7. Mẹo ghi nhớ (nếu có) (e.g. Bộ Tử ở dưới mái nhà...)
   createdAt: number;
+  authorId?: string;
+  isSystem?: boolean;
 }
 
 export interface Lesson {
@@ -17,6 +19,9 @@ export interface Lesson {
   name: string;
   description?: string;
   createdAt: number;
+  authorId?: string;
+  authorUsername?: string;
+  isSystem?: boolean;
 }
 
 export interface Course {
@@ -25,6 +30,9 @@ export interface Course {
   description?: string;
   level?: string; // e.g. HSK 1, HSK 2, Giao tiếp...
   createdAt: number;
+  authorId?: string;
+  authorUsername?: string;
+  isSystem?: boolean;
 }
 
 export type CardMasteryStatus = 'unlearned' | 'learning' | 'mastered';

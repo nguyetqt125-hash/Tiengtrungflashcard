@@ -28,10 +28,12 @@ import {
   Check,
   ArrowUpDown,
   Filter,
+  Lock,
 } from 'lucide-react';
-import { Course, Lesson, Flashcard } from '../types';
+import { Course, Lesson, Flashcard, User } from '../types';
 import { speakChinese } from '../utils/speech';
 import { getCardMasteryMap, setCardMasteryLevel, setBatchCardMasteryLevel, getLessonSrsStats } from '../utils/srs';
+import { canEditCourse, canEditLesson, isAdmin } from '../utils/auth';
 import { HanziWriterModal } from './HanziWriterModal';
 
 interface LessonDetailProps {
@@ -39,6 +41,7 @@ interface LessonDetailProps {
   lessons: Lesson[];
   cards: Flashcard[];
   selectedLessonId: string | null;
+  currentUser?: User | null;
   onSelectLesson: (lessonId: string | null) => void;
   onBackToCourseList: () => void;
   onAddLesson: (courseId: string) => void;
@@ -60,6 +63,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   lessons,
   cards,
   selectedLessonId,
+  currentUser,
   onSelectLesson,
   onBackToCourseList,
   onAddLesson,
@@ -185,6 +189,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
 
   // VIEW 1: DEDICATED LESSON PAGE (Quizlet Style)
   if (selectedLesson) {
+    const isCurrentLessonEditable = canEditLesson(currentCourse, selectedLesson, currentUser);
     const lessonCards = cards.filter((c) => c.lessonId === selectedLesson.id);
     const filteredCards = lessonCards.filter(
       (c) =>
@@ -205,25 +210,27 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
             <span>← Quay lại Danh sách Bài Học</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              id="tour-batch-import-btn"
-              onClick={() => onOpenBatchImport(selectedLesson.id, selectedLesson.name)}
-              className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200/60 transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <FileText className="w-4 h-4" />
-              <span>📄 Nhập Hàng Loạt (Text)</span>
-            </button>
+          {isCurrentLessonEditable && (
+            <div className="flex items-center gap-2">
+              <button
+                id="tour-batch-import-btn"
+                onClick={() => onOpenBatchImport(selectedLesson.id, selectedLesson.name)}
+                className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200/60 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>📄 Nhập Hàng Loạt (Text)</span>
+              </button>
 
-            <button
-              id="tour-add-single-card-btn"
-              onClick={() => onAddSingleCard(selectedLesson.id)}
-              className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Thêm 1 Thẻ</span>
-            </button>
-          </div>
+              <button
+                id="tour-add-single-card-btn"
+                onClick={() => onAddSingleCard(selectedLesson.id)}
+                className="px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Thêm 1 Thẻ</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quizlet-Style Hero Banner for Selected Lesson */}
@@ -362,7 +369,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
               )}
 
               {/* Batch Select Toggle Button */}
-              {filteredCards.length > 0 && (
+              {filteredCards.length > 0 && isCurrentLessonEditable && (
                 <button
                   onClick={() => {
                     setIsSelectMode(!isSelectMode);
@@ -389,7 +396,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
           </div>
 
           {/* Active Batch Selection Toolbar */}
-          {isSelectMode && (
+          {isSelectMode && isCurrentLessonEditable && (
             <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-indigo-50/60 p-3 rounded-xl border border-indigo-100/80 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 flex-wrap">
                 <button
@@ -447,20 +454,22 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
               {searchQuery ? 'Không tìm thấy từ vựng phù hợp' : 'Bài học này chưa có thẻ từ vựng nào'}
             </h3>
             <p className="text-xs text-slate-500 mb-5">Thêm từ vựng để bắt đầu luyện tập theo phương pháp Quizlet!</p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => onOpenBatchImport(selectedLesson.id, selectedLesson.name)}
-                className="px-4 py-2 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-xl hover:bg-indigo-100 cursor-pointer"
-              >
-                📄 Nhập hàng loạt (Text)
-              </button>
-              <button
-                onClick={() => onAddSingleCard(selectedLesson.id)}
-                className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 shadow-xs cursor-pointer"
-              >
-                + Thêm 1 Thẻ
-              </button>
-            </div>
+            {isCurrentLessonEditable && (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => onOpenBatchImport(selectedLesson.id, selectedLesson.name)}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-xl hover:bg-indigo-100 cursor-pointer"
+                >
+                  📄 Nhập hàng loạt (Text)
+                </button>
+                <button
+                  onClick={() => onAddSingleCard(selectedLesson.id)}
+                  className="px-4 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 shadow-xs cursor-pointer"
+                >
+                  + Thêm 1 Thẻ
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -560,28 +569,30 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditCard(card);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-                          title="Sửa thẻ"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteCard(card);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
-                          title="Xóa thẻ"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {isCurrentLessonEditable && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditCard(card);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="Sửa thẻ"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteCard(card);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            title="Xóa thẻ"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Card Details (7 Fields) */}
@@ -757,6 +768,9 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
   }
 
   // VIEW 2: VERTICAL LESSONS LIST (When no specific lesson is opened)
+  const isCourseEditable = canEditCourse(currentCourse, currentUser);
+  const isSysCourse = currentCourse.isSystem || currentCourse.authorId === 'admin-lannhi' || currentCourse.authorUsername === 'lannhi';
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Header */}
@@ -769,13 +783,20 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
           <span>Quay lại Danh sách Khóa Học</span>
         </button>
 
-        <button
-          onClick={() => onAddLesson(currentCourse.id)}
-          className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Tạo Bài Học Mới</span>
-        </button>
+        {isCourseEditable ? (
+          <button
+            onClick={() => onAddLesson(currentCourse.id)}
+            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Tạo Bài Học Mới</span>
+          </button>
+        ) : isSysCourse ? (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl">
+            <Lock className="w-3.5 h-3.5 text-slate-400" />
+            <span>Khóa học chuẩn (Chỉ đọc)</span>
+          </div>
+        ) : null}
       </div>
 
       {/* Course Banner Header */}
@@ -886,13 +907,19 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
           <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
             <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <h3 className="text-base font-bold text-slate-800 mb-1">Khóa học này chưa có bài học nào</h3>
-            <p className="text-xs text-slate-500 mb-4">Nhấn nút "+ Tạo Bài Học Mới" ở trên để bắt đầu tạo bài học!</p>
-            <button
-              onClick={() => onAddLesson(currentCourse.id)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-            >
-              + Tạo Bài Học Mới
-            </button>
+            <p className="text-xs text-slate-500 mb-4">
+              {isCourseEditable
+                ? 'Nhấn nút "+ Tạo Bài Học Mới" ở trên để bắt đầu tạo bài học!'
+                : 'Khóa học này hiện chưa có bài học nào được đăng tải.'}
+            </p>
+            {isCourseEditable && (
+              <button
+                onClick={() => onAddLesson(currentCourse.id)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                + Tạo Bài Học Mới
+              </button>
+            )}
           </div>
         ) : filteredAndSortedCourseLessons.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3">
@@ -1006,26 +1033,30 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1 pl-2 border-l border-slate-200">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditLesson(les);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-                        title="Sửa bài học"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteLesson(les);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
-                        title="Xóa bài học"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canEditLesson(currentCourse, les, currentUser) && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditLesson(les);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="Sửa bài học"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteLesson(les);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            title="Xóa bài học"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
 
                       <span className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl ml-1">
                         Xem Thẻ ➔
