@@ -42,7 +42,8 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Navigation View State: 'courses' | 'lessons' | 'auth'
-  const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('courses');
+  // When users open the web app, display the Login/Registration page first
+  const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('auth');
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
 
@@ -210,6 +211,25 @@ export default function App() {
   const currentCourse = courses.find((c) => c.id === currentCourseId);
   const currentLesson = lessons.find((l) => l.id === currentLessonId);
 
+  // Full-screen Auth View when user enters the web app
+  if (currentView === 'auth') {
+    return (
+      <AuthPage
+        initialMode={authModalMode}
+        onLoginSuccess={(user) => {
+          setCurrentUserState(user);
+          reloadData();
+          setCurrentView('courses');
+          setIsTourOpen(true);
+        }}
+        onContinueAsGuest={() => {
+          setCurrentView('courses');
+          setIsTourOpen(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans flex flex-col">
       {/* Global Navigation Header */}
@@ -235,26 +255,13 @@ export default function App() {
         onLogout={() => {
           logoutUser();
           setCurrentUserState(null);
+          setCurrentView('auth');
           reloadData();
         }}
       />
 
       {/* Main View Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {currentView === 'auth' && (
-          <AuthPage
-            initialMode={authModalMode}
-            onLoginSuccess={(user) => {
-              setCurrentUserState(user);
-              reloadData();
-              setCurrentView('courses');
-            }}
-            onContinueAsGuest={() => {
-              setCurrentView('courses');
-            }}
-          />
-        )}
-
         {currentView === 'courses' && (
           <CourseList
             courses={courses}
@@ -439,6 +446,7 @@ export default function App() {
         onLoginSuccess={(user) => {
           setCurrentUserState(user);
           reloadData();
+          setIsTourOpen(true);
         }}
       />
 

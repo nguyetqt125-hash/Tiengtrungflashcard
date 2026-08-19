@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, User as UserIcon, Lock, Check, AlertCircle, ShieldCheck, Sparkles, UserPlus, LogIn, KeyRound } from 'lucide-react';
+import { X, User as UserIcon, Lock, Check, AlertCircle, Sparkles, UserPlus, LogIn } from 'lucide-react';
 import { User } from '../types';
-import { loginUser, registerUser, DEFAULT_ADMIN } from '../utils/auth';
+import { loginUser, registerUser } from '../utils/auth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -61,13 +61,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillAdminCredentials = () => {
-    setMode('login');
-    setUsername('lannhi');
-    setPassword('123456');
-    setError(null);
   };
 
   return (
@@ -172,7 +165,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={mode === 'login' ? 'Nhập lannhi hoặc tên tài khoản' : 'Nhập tên đăng nhập (viết liền)'}
+                placeholder={mode === 'login' ? 'Nhập tên đăng nhập của bạn' : 'Nhập tên đăng nhập (viết liền)'}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0D99FF] focus:border-transparent transition-all"
               />
             </div>
