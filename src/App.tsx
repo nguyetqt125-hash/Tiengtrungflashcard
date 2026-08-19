@@ -32,7 +32,6 @@ import { HanziWorksheetModal } from './components/HanziWorksheetModal';
 import { OnboardingTour } from './components/OnboardingTour';
 import { AuthModal } from './components/AuthModal';
 import { AuthPage } from './components/AuthPage';
-import { PersonalSheetModal } from './components/PersonalSheetModal';
 import { User } from './types';
 import { getCurrentUser, setCurrentUser, logoutUser } from './utils/auth';
 
@@ -41,7 +40,6 @@ export default function App() {
   const [currentUser, setCurrentUserState] = useState<User | null>(() => getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
-  const [isPersonalSheetModalOpen, setIsPersonalSheetModalOpen] = useState(false);
 
   // Navigation View State: 'courses' | 'lessons' | 'auth'
   const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('courses');
@@ -126,6 +124,9 @@ export default function App() {
       const newCourse: Course = {
         ...data,
         id: `course-${Date.now()}`,
+        authorId: currentUser ? currentUser.id : 'guest',
+        authorUsername: currentUser ? (currentUser.displayName || currentUser.username) : 'Khách',
+        isSystem: currentUser?.role === 'admin',
         createdAt: Date.now(),
       };
       saveCourses([...existing, newCourse]);
@@ -143,6 +144,7 @@ export default function App() {
       const newLesson: Lesson = {
         ...data,
         id: `lesson-${Date.now()}`,
+        authorId: currentUser ? currentUser.id : 'guest',
         createdAt: Date.now(),
       };
       saveLessons([...existing, newLesson]);
@@ -224,7 +226,6 @@ export default function App() {
           setIsCourseModalOpen(true);
         }}
         onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
-        onOpenPersonalSheet={() => setIsPersonalSheetModalOpen(true)}
         onOpenWorksheet={() => setIsWorksheetOpen(true)}
         onOpenTour={() => setIsTourOpen(true)}
         onOpenAuth={(mode) => {
@@ -429,17 +430,6 @@ export default function App() {
         onRefreshData={reloadData}
         currentUser={currentUser}
       />
-
-      {/* Personal Google Sheet Modal (Regular Users / Students) */}
-      {currentUser && (
-        <PersonalSheetModal
-          isOpen={isPersonalSheetModalOpen}
-          onClose={() => setIsPersonalSheetModalOpen(false)}
-          currentUser={currentUser}
-          onUserUpdate={(updated) => setCurrentUserState(updated)}
-          onRefreshData={reloadData}
-        />
-      )}
 
       {/* User Login & Registration Modal */}
       <AuthModal

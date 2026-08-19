@@ -77,8 +77,12 @@ export const canEditCourse = (course?: Course | null, user?: User | null): boole
   if (course.isSystem || course.authorId === 'admin-lannhi' || course.authorUsername === 'lannhi') {
     return false;
   }
-  // If user is logged in and is the author
+  // If user is logged in and is the author of this course
   if (user && (course.authorId === user.id || course.authorUsername === user.username)) {
+    return true;
+  }
+  // If course was created as guest / local user
+  if (!course.authorId || course.authorId === 'guest' || course.authorUsername === 'Khách') {
     return true;
   }
   return false;
@@ -92,7 +96,10 @@ export const canEditLesson = (course?: Course | null, lesson?: Lesson | null, us
   if (course.isSystem || course.authorId === 'admin-lannhi' || lesson.isSystem || lesson.authorId === 'admin-lannhi') {
     return false;
   }
-  if (user && (lesson.authorId === user.id || course.authorId === user.id)) {
+  if (user && (lesson.authorId === user.id || course.authorId === user.id || course.authorUsername === user.username)) {
+    return true;
+  }
+  if (!lesson.authorId || lesson.authorId === 'guest' || !course.authorId || course.authorId === 'guest') {
     return true;
   }
   return false;

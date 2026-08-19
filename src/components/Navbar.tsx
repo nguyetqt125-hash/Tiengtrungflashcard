@@ -23,7 +23,6 @@ interface NavbarProps {
   onNavigateCourse: (courseId: string) => void;
   onOpenAddCourse?: () => void;
   onOpenGoogleSheets?: () => void;
-  onOpenPersonalSheet?: () => void;
   onOpenWorksheet?: () => void;
   onOpenTour?: () => void;
   onOpenAuth?: (mode: 'login' | 'register') => void;
@@ -40,7 +39,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigateCourse,
   onOpenAddCourse,
   onOpenGoogleSheets,
-  onOpenPersonalSheet,
   onOpenWorksheet,
   onOpenTour,
   onOpenAuth,
@@ -116,31 +114,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Google Sheet Sync Buttons */}
-            {currentUser?.role === 'admin' ? (
-              onOpenGoogleSheets && (
-                <button
-                  id="tour-admin-sheets-btn"
-                  onClick={onOpenGoogleSheets}
-                  className="px-3 py-1.5 sm:px-3 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Google Sheets Quản Trị Hệ Thống"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-                  <span className="hidden md:inline">Sheet Quản Trị</span>
-                </button>
-              )
-            ) : (
-              onOpenPersonalSheet && (
-                <button
-                  id="tour-user-sheets-btn"
-                  onClick={onOpenPersonalSheet}
-                  className="px-3 py-1.5 sm:px-3 sm:py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Lưu dữ liệu vào Google Sheet của riêng bạn"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span className="hidden md:inline">Google Sheet Cá Nhân</span>
-                </button>
-              )
+            {/* Google Sheet Sync Button (Admin / Master) */}
+            {currentUser?.role === 'admin' && onOpenGoogleSheets && (
+              <button
+                id="tour-admin-sheets-btn"
+                onClick={onOpenGoogleSheets}
+                className="px-3 py-1.5 sm:px-3 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Google Sheets Quản Trị Hệ Thống"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                <span className="hidden md:inline">Google Sheets Quản Trị</span>
+              </button>
             )}
 
             {/* Printable A4 Worksheet */}
@@ -159,14 +143,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Account Status / Login */}
             {currentUser ? (
               <div className="flex items-center gap-1.5 pl-1 sm:pl-2 border-l border-slate-200">
-                <button
-                  onClick={() => (currentUser.role === 'admin' ? onOpenGoogleSheets?.() : onOpenPersonalSheet?.())}
-                  className={`px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all border ${
+                <div
+                  className={`px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border ${
                     currentUser.role === 'admin'
-                      ? 'bg-amber-50 text-amber-800 border-amber-200/80 hover:bg-amber-100'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200/80'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
-                  title={currentUser.role === 'admin' ? 'Tài khoản Quản trị viên' : 'Tài khoản Học viên'}
+                  title={currentUser.role === 'admin' ? 'Tài khoản Quản trị viên (Lan Nhi)' : 'Tài khoản Người dùng'}
                 >
                   {currentUser.role === 'admin' ? (
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
@@ -176,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="max-w-[100px] truncate font-mono text-[11px]">
                     {currentUser.username}
                   </span>
-                </button>
+                </div>
 
                 {onLogout && (
                   <button
