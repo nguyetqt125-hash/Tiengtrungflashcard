@@ -41,16 +41,30 @@ export const getAllUsers = (): UserAccountRecord[] => {
   return initializeAuth();
 };
 
-// Get current active user (null if not logged in)
-export const getCurrentUser = (): User | null => {
+// Get current active user (defaults to Admin Lan Nhi)
+export const getCurrentUser = (): User => {
   try {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (raw) {
       return JSON.parse(raw);
     }
-    return null;
+    const adminUser: User = {
+      id: DEFAULT_ADMIN.id,
+      username: DEFAULT_ADMIN.username,
+      displayName: DEFAULT_ADMIN.displayName,
+      role: DEFAULT_ADMIN.role,
+      createdAt: DEFAULT_ADMIN.createdAt,
+    };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminUser));
+    return adminUser;
   } catch (e) {
-    return null;
+    return {
+      id: DEFAULT_ADMIN.id,
+      username: DEFAULT_ADMIN.username,
+      displayName: DEFAULT_ADMIN.displayName,
+      role: DEFAULT_ADMIN.role,
+      createdAt: DEFAULT_ADMIN.createdAt,
+    };
   }
 };
 

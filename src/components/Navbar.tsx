@@ -5,7 +5,6 @@ import {
   BookOpen,
   GraduationCap,
   FileText,
-  FileSpreadsheet,
   User as UserIcon,
   LogIn,
   LogOut,
@@ -111,19 +110,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-mono text-xs opacity-90">❖</span>
                 <span className="hidden sm:inline tracking-tight">Tour Hướng Dẫn</span>
                 <span className="sm:hidden">Tour</span>
-              </button>
-            )}
-
-            {/* Google Sheet Sync Button (Admin / Master) */}
-            {currentUser?.role === 'admin' && onOpenGoogleSheets && (
-              <button
-                id="tour-admin-sheets-btn"
-                onClick={onOpenGoogleSheets}
-                className="px-3 py-1.5 sm:px-3 sm:py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs border border-indigo-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                title="Google Sheets Quản Trị Hệ Thống"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-                <span className="hidden md:inline">Google Sheets Quản Trị</span>
               </button>
             )}
 

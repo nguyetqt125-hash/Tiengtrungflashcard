@@ -42,8 +42,8 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   // Navigation View State: 'courses' | 'lessons' | 'auth'
-  // When users open the web app, display the Login/Registration page first
-  const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('auth');
+  // Directly open courses with Admin account logged in by default
+  const [currentView, setCurrentView] = useState<'courses' | 'lessons' | 'auth'>('courses');
   const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
 

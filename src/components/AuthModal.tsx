@@ -235,7 +235,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
           )}
           <p className="text-slate-400">
-            Dữ liệu đăng ký được lưu an toàn vào Google Sheet quản trị và thiết bị của bạn.
+            Dữ liệu tài khoản của bạn được bảo mật và đồng bộ an toàn.
           </p>
         </div>
       </div>
